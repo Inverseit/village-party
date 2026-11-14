@@ -1,4 +1,4 @@
-//! agent-economy — the village ledger and its market, on Solana.
+//! Settlers of Solana — the village ledger and its market, on Solana.
 //!
 //! The simulation (agent minds, time, movement) runs off-chain. What lives here is
 //! the economy itself: who owns what, and the market that turns orders into a price.
