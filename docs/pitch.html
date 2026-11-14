@@ -159,34 +159,55 @@ ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;hei
 </section>
 
 <!-- 5 · AI villagers -->
-<section class="slide dark" data-notes="<b>2:05–2:25</b> The village is never empty: AI villagers fill it up to 60. Each one gets a strategy and a personality, and they really play the same economy you do. Scripted brain is free and instant; the OpenAI brain decides for 12 villagers per request, writes their lines, and falls back to the script if it's slow, with a hard budget cap.">
+<section class="slide dark" data-notes="<b>2:05–2:25</b> The village is never empty: AI villagers fill it up to 60. Each one reads the same market you do and decides for itself. The fast agents are instant and free and react to prices and the crowd; the LLM brain decides for 12 villagers per request, writes their lines, and falls back to the script if it's slow, with a hard budget cap.">
   <div class="bg" style="background-image:url(screenshots/host-hero.jpg);filter:blur(3px) brightness(.6);transform:scale(1.04)"></div>
   <div class="pad">
     <div class="kicker">The AI villagers</div>
-    <h2 class="h">8 strategies × 8 personalities.<br>They play to win,<br>and they talk.</h2>
+    <h2 class="h">Every villager reads the market<br>and decides for itself.<br>And they talk.</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:40px;width:900px">
       <div class="panel">
-        <div class="kicker" style="font-size:15px;color:var(--gold)">Strategies</div>
-        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">planner · contrarian · trend-chaser · landlord · specialist · basket-maker · copycat · gambler</p>
+        <div class="kicker" style="font-size:15px;color:var(--gold)">What they see</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">last round's prices · where the crowd went · the weather · their own purse, food and house</p>
       </div>
       <div class="panel">
-        <div class="kicker" style="font-size:15px;color:var(--gold)">Personalities</div>
-        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">greedy · lazy · paranoid · dreamer · gossip · philosopher · dramatic · competitive</p>
+        <div class="kicker" style="font-size:15px;color:var(--gold)">What they decide</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">which job · what to keep and what to sell · what to say to the room, in their own voice</p>
       </div>
       <div class="panel" style="grid-column:span 2">
-        <div class="kicker" style="font-size:15px;color:var(--gold)">Two brains</div>
-        <p style="font-size:22px;font-weight:700;line-height:1.45;margin-top:8px"><span style="color:var(--mint)">Scripted</span>: free, instant, a big hand-written line bank that reacts to events and names other players.<br><span style="color:var(--mint)">OpenAI</span>: one structured call decides for 12 villagers in their own voice. Timeout → scripted fallback, per-game budget cap. A round never stalls.</p>
+        <div class="kicker" style="font-size:15px;color:var(--gold)">Two brains, one benchmark</div>
+        <p style="font-size:22px;font-weight:700;line-height:1.45;margin-top:8px"><span style="color:var(--mint)">Fast agents</span>: every round each villager reads last round's prices, the crowd and the weather, and decides. Instant, free, and benchmarked over 1,000 seeded games (next slide).<br><span style="color:var(--mint)">LLM agents</span>: one structured call decides for 12 villagers in their own voice, with a timeout fallback and a budget cap. A round never stalls.</p>
       </div>
     </div>
-    <div class="bubble" style="right:110px;top:260px;transform:rotate(2deg)"><b>Dramatic · basket-maker</b>They laughed at my baskets. They are not laughing now. They are hungry.</div>
-    <div class="bubble" style="right:210px;top:420px;transform:rotate(-2deg)"><b>Philosopher</b>Is the apple picked, or does the apple let go?</div>
-    <div class="bubble" style="right:90px;top:570px;transform:rotate(1.5deg)"><b>Paranoid</b>Gilbertrand has been counting my apples. I know it.</div>
-    <div class="bubble" style="right:250px;top:720px;transform:rotate(-1deg)"><b>Gossip</b>The orchard has the best gossip. Also apples.</div>
+    <div class="bubble" style="right:110px;top:260px;transform:rotate(2deg)"><b>Veronicole</b>They laughed at my baskets. They are not laughing now. They are hungry.</div>
+    <div class="bubble" style="right:210px;top:420px;transform:rotate(-2deg)"><b>Rubennett</b>Is the apple picked, or does the apple let go?</div>
+    <div class="bubble" style="right:90px;top:570px;transform:rotate(1.5deg)"><b>Glendavid</b>Gilbertrand has been counting my apples. I know it.</div>
+    <div class="bubble" style="right:250px;top:720px;transform:rotate(-1deg)"><b>Kaitlynda</b>The orchard has the best gossip. Also apples.</div>
+  </div>
+</section>
+
+<!-- bench -->
+<section class="slide dark" data-notes="<b>If asked about the AI</b> The economy lab is a benchmark: every AI villager plays 1,000 seeded games in the same economy, so you can see which approach actually wins. Investing early and forecasting the crowd beat every fixed habit, and luck barely matters.">
+  <div style="position:absolute;inset:0;background:radial-gradient(1200px 700px at 80% 0%,#1d3b2c 0,#0f1b17 60%)"></div>
+  <div class="pad">
+    <div class="kicker">The bench · 1,000 seeded games per AI villager</div>
+    <h2 class="h">Who survives the island?</h2>
+    <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:28px;margin-top:34px">
+      <div class="panel" style="padding:24px 30px">
+        <div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:800"><span>AI villager</span><span>Mean score</span><span style="text-align:right">Pts</span><span style="text-align:right">Wins</span></div>
+        <div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager A</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:93%;background:var(--mint);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">1114</span><span class="mono" style="color:var(--dim);text-align:right">31%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager B</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:79%;background:var(--gold);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">1034</span><span class="mono" style="color:var(--dim);text-align:right">11%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager C</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:77%;background:var(--gold);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">1024</span><span class="mono" style="color:var(--dim);text-align:right">25%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager D</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:73%;background:var(--gold);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">999</span><span class="mono" style="color:var(--dim);text-align:right">12%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager E</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:71%;background:var(--gold);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">992</span><span class="mono" style="color:var(--dim);text-align:right">14%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager F</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:64%;background:var(--gold);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">953</span><span class="mono" style="color:var(--dim);text-align:right">6%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager G</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:31%;background:var(--coral);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">770</span><span class="mono" style="color:var(--dim);text-align:right">0%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager H</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:18%;background:var(--coral);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">701</span><span class="mono" style="color:var(--dim);text-align:right">0%</span></div><div style="display:grid;grid-template-columns:200px 1fr 70px 60px;gap:14px;align-items:center;margin:9px 0;font-size:21px;font-weight:800"><span>AI villager I</span><div style="height:22px;background:rgba(255,255,255,.08);border-radius:11px;overflow:hidden"><div style="height:100%;width:9%;background:var(--coral);border-radius:11px"></div></div><span class="mono" style="color:var(--gold);text-align:right">647</span><span class="mono" style="color:var(--dim);text-align:right">0%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-content:start">
+        <div class="panel" style="padding:20px 24px"><div class="big" style="font-size:56px;color:var(--mint)">+34%</div><p style="font-size:20px">thinking ahead beats casual play</p></div>
+        <div class="panel" style="padding:20px 24px"><div class="big" style="font-size:56px;color:var(--gold)">73%</div><p style="font-size:20px">of half-time leaders still lose</p></div>
+        <div class="panel" style="padding:20px 24px"><div class="big" style="font-size:56px;color:var(--mint)">1.03×</div><p style="font-size:20px">best vs worst starting talent: skill, not luck</p></div>
+        <div class="panel" style="padding:20px 24px"><div class="big" style="font-size:56px;color:var(--coral)">0.1%</div><p style="font-size:20px">of villager-rounds go hungry</p></div>
+              </div>
+    </div>
   </div>
 </section>
 
 <!-- 6 · results -->
-<section class="slide dark" data-notes="<b>2:25–2:35</b> Every game ends with a podium, awards like Sheep and Lone Wolf, price charts, which AI strategy did best, and the big question: did the humans beat the machines?">
+<section class="slide dark" data-notes="<b>2:25–2:35</b> Every game ends with a podium, awards like Sheep and Lone Wolf, price charts, which AI villager did best, and the big question: did the humans beat the machines?">
   <div style="position:absolute;inset:0;background:#101317"></div>
   <div class="pad" style="padding-top:64px">
     <div class="kicker">A proper ending</div>
@@ -208,12 +229,12 @@ ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;hei
           <div class="bar"><span>best-paying job</span><div class="t"><div style="width:100%"></div></div><span class="v">623</span></div>
           <div class="bar"><span>chop wood</span><div class="t"><div style="width:94.7%;background:var(--chop)"></div></div><span class="v">590</span></div>
           <div class="bar"><span>build houses</span><div class="t"><div style="width:90.9%;background:var(--build)"></div></div><span class="v">566</span></div>
-          <div class="bar"><span>contrarian</span><div class="t"><div style="width:83%;background:#9aa3ad"></div></div><span class="v">517</span></div>
+          <div class="bar"><span>opposite of the crowd</span><div class="t"><div style="width:83%;background:#9aa3ad"></div></div><span class="v">517</span></div>
           <div class="bar"><span>pick apples</span><div class="t"><div style="width:79%;background:var(--pick)"></div></div><span class="v">492</span></div>
           <div class="bar"><span>random</span><div class="t"><div style="width:54.4%;background:#6f7780"></div></div><span class="v">339</span></div>
           <div class="bar"><span>weave baskets</span><div class="t"><div style="width:50.6%;background:var(--weave)"></div></div><span class="v">315</span></div>
         </div>
-        <p style="margin-top:18px;font-size:22px;font-weight:800;color:var(--mint)">No pure strategy wins. Reading the room wins.</p>
+        <p style="margin-top:18px;font-size:22px;font-weight:800;color:var(--mint)">No single habit wins. Reading the room wins.</p>
       </div>
       <div style="display:flex;flex-direction:column;gap:22px">
         <div class="panel">
@@ -243,7 +264,7 @@ ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;hei
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">60</div><p style="font-size:21px">villagers in one room, humans + AI. Late joiners take over an AI villager</p></div>
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--mint)">0</div><p style="font-size:21px">apps to install. Phones join in the browser by QR or a 4-letter code</p></div>
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">6–30s</div><p style="font-size:21px">a round. It ends early as soon as everyone has picked</p></div>
-      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">64</div><p style="font-size:21px">villager types: 8 strategies × 8 personalities, 116 hand-written lines</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">116</div><p style="font-size:21px">lines of banter that react to events and call out rivals by name</p></div>
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--mint)">2.6s</div><p style="font-size:21px">to simulate 1,000 whole games (40 villagers, 12 rounds) on a laptop</p></div>
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">12</div><p style="font-size:21px">AI villagers decided per OpenAI request, each in its own voice</p></div>
       <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--coral)">$0.50</div><p style="font-size:21px">hard spend cap per game. A default game is estimated at under a cent</p></div>
