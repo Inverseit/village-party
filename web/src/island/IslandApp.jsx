@@ -16,7 +16,7 @@ const fmt = (v, d = 2) => Number(v || 0).toFixed(d);
 const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
 // One line on the wire for one villager, the moment they choose.
-const WIRE_VERB = { gather_food: 'goes fishing', gather_wood: 'goes to chop wood', craft_net: 'sits down to craft a net', build_house: 'heads for the building site' };
+const WIRE_VERB = { gather_food: 'goes apple picking', gather_wood: 'goes to chop wood', craft_net: 'sits down to weave a basket', build_house: 'heads for the building site' };
 function wireLine(act, seen) {
   const who = act.name || `Villager ${act.id}`;
   const said = clip(seen.thought, 90);
@@ -348,7 +348,7 @@ export default class IslandApp extends React.Component {
       `Room ${p.code} is open: scan the code on the screen to join`,
       `${plural(p.humans, "player")} and ${plural(p.bots, "AI villager")} are on the island`,
       ...p.players.slice(-4).map(x => `${x.name} has arrived`),
-      "Every phone runs one villager. Fish, chop, craft or build, and end the game with the most points",
+      "Every phone runs one villager. Pick apples, chop, weave or build, and end the game with the most points",
     ];
     const lead = p.leaderboard?.[0];
     if (p.status === "ended") {
@@ -364,7 +364,7 @@ export default class IslandApp extends React.Component {
     const rise = s.prices[dearest] - s.pricePrev[dearest];
     return [
       ...s.live,
-      `Food trades at ${fmt(s.prices.food)}c, wood at ${fmt(s.prices.wood)}c and a net at ${fmt(s.prices.nets)}c`,
+      `Apples trade at ${fmt(s.prices.food)}c, wood at ${fmt(s.prices.wood)}c and a basket at ${fmt(s.prices.nets)}c`,
       p.event && `${p.event.title}: ${p.event.blurb}`,
       counts[busiest.id] > 0 && `The ${busiest.name.toLowerCase()} is the busiest place on the island with ${plural(counts[busiest.id], "villager")} there`,
       lead && `${lead.name}, ${lead.human ? "a player" : "an AI villager"}, leads the village with ${plural(lead.points, "point")}`,
@@ -384,7 +384,7 @@ export default class IslandApp extends React.Component {
     const toneColor = tone => tone > 0 ? "#3fe0a0" : tone < 0 ? "#ff7d63" : "#8b9095";
     const tape = GOODS.map(g => {
       const change = s.prices[g] - s.pricePrev[g], tone = Math.abs(change) < 0.005 ? 0 : Math.sign(change);
-      return { name: g, value: on ? fmt(s.prices[g]) : "-", delta: !on ? "" : tone ? (tone > 0 ? "▲ +" : "▼ −") + fmt(Math.abs(change)) : "• 0.00", tone };
+      return { name: { food: "apples", nets: "baskets" }[g] ?? g, value: on ? fmt(s.prices[g]) : "-", delta: !on ? "" : tone ? (tone > 0 ? "▲ +" : "▼ −") + fmt(Math.abs(change)) : "• 0.00", tone };
     });
     tape.push({ name: "houses", value: on ? String(s.houses) : "-", color: "#ffcf4a" },
               { name: "hungry", value: on ? String(s.hungry) : "-", color: s.hungry ? "#ff7d63" : undefined });

@@ -7,7 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
-import { createGame, points, EVENTS, GOODS, C } from './game.mjs';
+import { createGame, points, EVENTS, GOODS, GOOD_NAME, JOBS, C } from './game.mjs';
 import { createBrain } from './llm.mjs';
 import { STRATEGIES } from './bots.mjs';
 
@@ -109,7 +109,7 @@ function state() {
   return {
     running: true, paused: false, pausing: false, provider: g.settings.brain, config: { agents: g.agents.length, provider: g.settings.brain },
     round: g.history.length, roundMs: g.roundMs, seconds: g.startedAt ? Math.round(((g.endedAt || Date.now()) - g.startedAt) / 1000) : 0,
-    goods: GOODS,
+    goods: GOODS, goodNames: GOOD_NAME, jobs: JOBS,
     prices: Object.fromEntries(GOODS.map(k => [k, coins(g.prices[k])])),
     volumes: { ...g.volumes },
     metrics: { gdp: coins(last?.gdp ?? 0), wbRound: last?.wbRound ?? 0 },
@@ -133,7 +133,7 @@ function me(token) {
   return {
     game: { id: g.id, code: g.code, status: g.status, round: g.round, rounds: g.settings.rounds, msLeft: g.status === 'running' ? Math.max(0, g.deadline - Date.now()) : 0,
             roundSeconds: g.settings.roundSeconds, event: eventView(g), players: g.agents.filter(x => x.human).length, villagers: g.agents.length,
-            prices: Object.fromEntries(GOODS.map(k => [k, coins(g.prices[k])])), crowd: g.lastRound?.crowd ?? null },
+            prices: Object.fromEntries(GOODS.map(k => [k, coins(g.prices[k])])), goodNames: GOOD_NAME, crowd: g.lastRound?.crowd ?? null },
     me: { id: a.id, name: a.name, talent: a.talent, coins: Math.round(a.coins / 100), food: a.food, wood: a.wood, nets: a.nets + (a.netUses > 0 ? 1 : 0), houses: a.houses,
           building: a.building, buildShifts: g.shiftsFor(a), hungry: a.hunger > 0, cold: a.cold > 0, points: points(a), rank: a.rank ?? null,
           job: a.job, lastJob: a.did ?? a.lastJob, note: a.note.trim(), earned: Math.round(a.earned / 100), wbRound: a.wbRound ?? 0, thought: a.thought },

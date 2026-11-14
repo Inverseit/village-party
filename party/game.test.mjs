@@ -98,6 +98,7 @@ test('decide refuses unknown jobs and anything outside a running game', () => {
 
 test('building: a house takes its shifts, then counts toward points and pays rent', () => {
   const s = setup({ rounds: 6 }, 3);
+  s.players[0].coins = 1_000_000;          // wood can get dear in a village of three: the builder must always afford it
   const g = play(s, a => a.id === 0 ? 'build_house' : a.id === 1 ? 'gather_food' : 'gather_wood');
   const b = g.agents[0];
   assert.ok(b.houses >= 1, 'the builder finished at least one house');

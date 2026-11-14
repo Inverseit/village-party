@@ -1,7 +1,8 @@
 import React from 'react';
 
 const LINE = ['#ffcf4a', '#4fc3d9', '#7ddc7a', '#ff8a5c', '#c79bff', '#ff86b4'];
-const PRICE = { food: '#3cc3da', wood: '#63c074', nets: '#f0a13c' };
+const PRICE = { food: '#e8697a', wood: '#63c074', nets: '#f0a13c' };
+const GOOD = { food: 'apples', wood: 'wood', nets: 'baskets' };
 const Chip = ({ human }) => human ? <em className="vp-chip">PLAYER</em> : <em className="vp-chip ai">AI</em>;
 
 // Round numbers that divide a range into a handful of steps: 1, 2, 5, 10, 20…
@@ -77,10 +78,24 @@ function Versus({ humans, bots }) {
   );
   return (
     <div className="vp-card vp-vs">
-      <h3>Humans against the machines<i>average points</i></h3>
+      <h3>Humans against the machines<i>avg points</i></h3>
       {row('Players', humans, 'human')}
       {row('AI villagers', bots, 'ai')}
       <p>{verdict}</p>
+    </div>
+  );
+}
+
+function Strategies({ list }) {
+  if (!list?.length) return null;
+  return (
+    <div className="vp-card vp-strats">
+      <h3>AI strategies<i>avg points</i></h3>
+      {list.slice(0, 5).map((x, i) => (
+        <div key={x.strategy} className="vp-strat" title={x.blurb}>
+          <span className="vp-rank">{i + 1}</span><span className="vp-strat-name">{x.strategy}</span><span className="vp-strat-what">{x.blurb}</span><b>{x.avg}</b>
+        </div>
+      ))}
     </div>
   );
 }
@@ -104,9 +119,11 @@ export default function Results({ party, onNew }) {
           </div>
           <Podium top={R.ranking.slice(0, 3)} />
           <Versus humans={R.humansAvg} bots={R.botsAvg} />
+          <Strategies list={R.strategies} />
         </div>
 
         <div className="vp-col">
+          {R.recap && <div className="vp-card vp-recap"><span className="vp-award-title">The village gazette</span><p>{R.recap}</p></div>}
           <div className="vp-awards">
             {R.awards.map(a => (
               <div key={a.title} className={`vp-card vp-award${a.human ? ' human' : ''}`}>
@@ -121,7 +138,7 @@ export default function Results({ party, onNew }) {
             <LineChart title="Points" note="top six" marks={events}
               series={R.scoreLines.map((l, i) => ({ name: l.name + (l.human ? ' (player)' : ''), color: LINE[i % LINE.length], values: l.points, bold: l.human }))} />
             <LineChart title="Prices" note="coins, log scale" log marks={events}
-              series={Object.keys(PRICE).map(g => ({ name: g, color: PRICE[g], values: R.history.map(h => h.prices?.[g]) }))} />
+              series={Object.keys(PRICE).map(g => ({ name: GOOD[g], color: PRICE[g], values: R.history.map(h => h.prices?.[g]) }))} />
           </div>
         </div>
 

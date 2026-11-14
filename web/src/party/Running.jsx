@@ -5,7 +5,7 @@ import Qr from './Qr.jsx';
 import { shortUrl } from './Lobby.jsx';
 
 const JOBS = [
-  { id: 'gather_food', label: 'Fish', color: '#1f9fb5' },
+  { id: 'gather_food', label: 'Pick', color: '#d1495b' },
   { id: 'gather_wood', label: 'Chop', color: '#3f9450' },
   { id: 'craft_net', label: 'Craft', color: '#d98c2b' },
   { id: 'build_house', label: 'Build', color: '#cf6046' },

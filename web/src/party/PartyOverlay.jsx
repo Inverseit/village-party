@@ -18,7 +18,7 @@ export default function PartyOverlay() {
   const view = !party || setup ? 'setup' : party.status;
   return (
     <div className="vp">
-      {view === 'setup' && <Setup defaults={s.defaults} party={party} onBack={party?.status === 'lobby' ? () => setSetup(false) : null} />}
+      {view === 'setup' && <Setup defaults={s.defaults} brains={s.brains} party={party} onBack={party?.status === 'lobby' ? () => setSetup(false) : null} />}
       {view === 'lobby' && <Lobby party={party} onSettings={() => setSetup(true)} />}
       {view === 'running' && <Running key={party.id} party={party} at={at} villagers={s.agents.length} />}
       {view === 'ended' && <Results party={party} onNew={() => setSetup(true)} />}
