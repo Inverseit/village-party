@@ -249,3 +249,7 @@ in a market where prices are set by everyone's choices) and turns it into someth
 of people can play together in ten minutes. The 3D island and villager names come from that project.
 
 The original README, with setup for the Solana sim, is in [`docs/SETTLERS.md`](docs/SETTLERS.md).
+
+---
+
+Built on the Settlers of Solana project.
