@@ -18,16 +18,16 @@ villagers who all have their own strategies, personalities and opinions about yo
 ## Why it's fun
 
 Most "economy" games have fixed prices. In Village Party, **the price of everything is set by what
-everyone else just did.** If the whole room goes fishing, fish is worth nothing. If nobody chops
+everyone else just did.** If the whole room picks apples, apples are worth nothing. If nobody chops
 wood, the one person who did gets rich. Every round is a quick guess about what the other 20+
-people in the room (and the AI villagers) are about to do. Then a seagull heist wipes out your
-food anyway.
+people in the room (and the AI villagers) are about to do. Then a crow heist wipes out your
+apples anyway.
 
 - **No app to install.** Phones join by QR code or a 4-letter room code in the browser.
 - **Easy to learn, hard to play well.** Four buttons, a 12-second timer, and an estimate of what each job pays.
 - **The village is never empty.** AI villagers fill it up to 60, so you can play with 2 people or 40.
-- **Chaos on demand.** Storms, forest fires, cold snaps, a surprise wealth tax. The host can set one off whenever they like.
-- **A proper ending.** Podium, awards ("Sheep", "Lone wolf", "Hungriest"), price charts, and the big question: *did the humans beat the machines?*
+- **Chaos on demand.** Hailstorms, forest fires, cold snaps, a surprise wealth tax. The host can set one off whenever they like.
+- **A proper ending.** Podium, awards ("Sheep", "Lone wolf", "Hungriest"), price charts, which AI strategy did best, and the big question: *did the humans beat the machines?*
 
 <table>
 <tr>
@@ -39,7 +39,7 @@ food anyway.
 
 1. Scan the QR on the big screen
 2. Type your name and you're on the island
-3. Each round, pick **Fish**, **Chop wood**, **Craft a net** or **Build a house**
+3. Each round, pick **Pick apples**, **Chop wood**, **Weave a basket** or **Build a house**
 4. Each job shows its estimated pay at last round's prices
 5. Add a one-liner for your speech bubble on the big screen (optional)
 
@@ -53,10 +53,11 @@ food anyway.
 
 ```
 PICK    →  every villager (human or AI) picks one job before the clock runs out
-WORK    →  catch fish, chop wood, craft a net (+60% catch for 4 shifts) or put a shift into a house
+WORK    →  pick apples in the orchard, chop wood in the forest, weave a basket
+           (+60% apple harvest for 4 shifts) or put a shift into a house
 SELL    →  everything beyond what you keep goes to the mainland trader:
            the more of a good the village offers, the lower its price this round
-LIVE    →  everyone eats 2 food and burns 1 wood, buying what's short;
+LIVE    →  everyone eats 2 apples and burns 1 wood, buying what's short;
            go hungry or cold and you work at 60% strength next round
 EARN    →  a finished house is worth 200 points and pays 25 rent every round after
 SCORE   →  points = coins + houses. Richest villager at the end wins.
@@ -64,8 +65,8 @@ SCORE   →  points = coins + houses. Richest villager at the end wins.
 
 The round ends early once everyone has picked, so a room that decides quickly plays quickly.
 
-**Events** (chaos level from *Calm* to *Mayhem*): 🌊 Storm · 🐟 Fish frenzy · 🔥 Forest fire · ❄️ Cold
-snap · 🦠 Blight · 🐦 Seagull heist · 💸 Surprise tax · 🌾 Golden season.
+**Events** (chaos level from *Calm* to *Mayhem*): 🌨️ Hailstorm · 🍎 Bumper crop · 🔥 Forest fire · ❄️ Cold
+snap · 🦠 Blight · 🐦‍⬛ Crow heist · 💸 Surprise tax · 🌾 Golden season.
 
 <img src="docs/screenshots/host-lobby.jpg" alt="Host screen lobby: QR code, room code, players joined, Start button" width="100%">
 
@@ -82,20 +83,20 @@ Every non-human villager gets a **strategy** and a **personality**, and they rea
 | `trend` | chases whatever the most villagers did last round |
 | `landlord` | builds houses as early as possible and lives off the rent |
 | `specialist` | sticks to the job they're talented at, whatever the price |
-| `netmaker` | crafts nets to sell, and fishes with one in between |
+| `netmaker` | weaves baskets to sell, and picks apples with one in between |
 | `copycat` | copies whatever the current leader did last round |
 | `gambler` | picks on a whim |
 
 Personalities (greedy, lazy, paranoid, dreamer, gossip, philosopher, dramatic, competitive) shape
-both their choices and what they say: *"They laughed at my nets. They are not laughing now. They
+both their choices and what they say: *"They laughed at my baskets. They are not laughing now. They
 are hungry."*
 
 **Two brains:**
 
 - **Scripted** (default, free, no network): fast heuristics plus a large hand-written line bank that reacts to events, hunger and other players by name.
-- **LLM** (`party/llm.mjs`, OpenAI): one structured-output request decides for 12 villagers at once, each in their own voice, and writes a short village-newspaper recap at the end. A round can never stall: anyone the model hasn't answered for in time falls back to the scripted brain, and spending is capped per game (`PARTY_AI_BUDGET_USD`, default $0.50). The server supports it (`brain: "openai"` on `/api/game` when `OPENAI_API_KEY` is set); the host-screen toggle is still marked *coming soon*.
+- **LLM** (`party/llm.mjs`, OpenAI): one structured-output request decides for 12 villagers at once, each in their own voice, and writes a short recap for the village gazette on the results screen. A round can never stall: anyone the model hasn't answered for in time falls back to the scripted brain, and spending is capped per game (`PARTY_AI_BUDGET_USD`, default $0.50). Pick it under **Villager brain** on the setup screen; it's enabled when the server has `OPENAI_API_KEY`.
 
-<img src="docs/screenshots/host-results.jpg" alt="Results: winner podium, awards, points and price charts, humans vs AI average" width="100%">
+<img src="docs/screenshots/host-results.jpg" alt="Results: winner podium, awards, points and price charts, humans vs AI average, best AI strategies" width="100%">
 
 ---
 
@@ -114,7 +115,7 @@ have everyone scan the QR. Phones land on `/play`.
 **Phones on a different network?** Run `ngrok http 8787` next to it: the server finds the tunnel
 by itself and puts its URL in the QR. Or set `PUBLIC_URL=https://your.host npm start`.
 
-**Optional LLM villagers:** put `OPENAI_API_KEY=...` in `.env` (see `.env.example`).
+**Optional LLM villagers:** put `OPENAI_API_KEY=...` in `.env` (see `.env.example`), then choose *OpenAI* as the villager brain.
 
 | Host setting | Range |
 |---|---|
@@ -122,6 +123,7 @@ by itself and puts its URL in the QR. Or set `PUBLIC_URL=https://your.host npm s
 | Rounds | 5 to 30 |
 | Seconds per round | 6 to 30 |
 | Chaos | Calm · Mild · Spicy · Mayhem |
+| Villager brain | Scripted · OpenAI |
 
 During a game, **Host menu** (bottom right) lets you trigger any event or end the game early.
 People who join after the start take over an AI villager ("Dana has taken over Barryl's body").
@@ -171,15 +173,25 @@ flowchart LR
 
   | Always plays… | Avg points (200 games) |
   |---|---|
-  | the best-paying job (greedy) | 639 |
-  | build houses | 593 |
-  | chop wood | 584 |
-  | contrarian (fish vs wood) | 521 |
-  | fish | 461 |
-  | random | 363 |
-  | nets | 314 |
+  | the best-paying job (greedy) | 623 |
+  | chop wood | 590 |
+  | build houses | 566 |
+  | contrarian (apples vs wood) | 517 |
+  | pick apples | 492 |
+  | random | 339 |
+  | weave baskets | 315 |
 
   No pure strategy wins. Playing the market wins.
+
+- **An economy lab for what comes next.** `party/lab/` is a separate, seeded and fully reproducible engine that plays thousands of 16-villager games per candidate rule set: a shared orchard and forest that can be over-harvested, planting your own apple trees, a village chest that pays a bounty for saplings, seasons and storage. Every economy gets the same tournament of strategies (careful, myopic, contrarian, builder, planter, orchardist, random…) and is scored on whether skill pays, how often the lead changes, whether a comeback is possible, and how much the village suffers. Results are committed in `party/lab/results/`.
+
+  ```bash
+  node party/lab/run.mjs              # every economy: one summary table
+  node party/lab/run.mjs REC          # the recommended preset in full
+  node party/lab/run.mjs sens E4d     # sensitivity to room size and player mix
+  ```
+
+  The current pick (`REC`: a thinning forest, private apple trees and a forest bounty, with a 2-shift house) keeps a 34% edge for careful play over casual play, while the half-time leader still loses 73% of games and hunger stays near zero (0.1% of villager-rounds).
 
 - **Tested:** `npm test` runs the game engine and the server API (`party/*.test.mjs`, Node's built-in test runner).
 
@@ -192,6 +204,7 @@ party/
   bots.mjs       scripted villagers: 8 strategies × 8 personalities, line bank
   llm.mjs        OpenAI villagers + end-of-game newspaper recap, budget-capped
   sim.mjs        balance harness (whole games on a fake clock)
+  lab/           economy lab: candidate rule sets, strategy tournaments, results
   demo.mjs       fake players for a live demo
   *.test.mjs     tests
 web/
