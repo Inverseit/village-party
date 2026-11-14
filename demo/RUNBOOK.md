@@ -22,7 +22,7 @@ The village now picks apples in the Orchard and weaves baskets in the Workshop. 
 
 - [ ] Push the repo and make sure the submitted revision is the one on screen.
 - [ ] Update the README and check the demo/runbook links.
-- [ ] Upload `demo/out/village-party-demo.mp4`; open the uploaded link once to confirm it plays.
+- [ ] GitHub Pages is on (Settings → Pages → Deploy from branch `main`, folder `/docs`); open https://inverseit.github.io/village-party/village-party-demo.mp4 and https://inverseit.github.io/village-party/deck/ once to confirm they load.
 - [ ] Submit the project link and video before the deadline; don't rely on a saved draft.
 - [ ] Charge the laptop, bring its charger, and test the big-screen display.
 - [ ] Have a phone hotspot ready; test the QR on the same Wi-Fi and, if needed, a tunnel.
@@ -94,5 +94,6 @@ The target final file is `demo/out/village-party-demo.mp4`; the headless rendere
    node demo/render.mjs --workers 8 --fps 24 --warm 1 --scale 0.6667   # 1280x720; resumes if interrupted
    python3 demo/mix.py                                                   # music + SFX → demo/out/mix.wav
    bash demo/montage.sh                                                  # → demo/out/village-party-demo.mp4
+   cp demo/out/village-party-demo.mp4 docs/                              # published copy (GitHub Pages)
    ```
    Check one shot first with `node demo/render.mjs --still tutor:8` (writes `demo/out/stills/`). The shot list, captions and camera paths are in `web/src/film/shots.js`. On this VM (software WebGL, 8 cores) the full render takes about 40 minutes.
