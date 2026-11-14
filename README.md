@@ -13,6 +13,15 @@ villagers who all have their own strategies, personalities and opinions about yo
 
 </div>
 
+## Eurasian Hack London
+**Pitch:** your phone is a villager on a tiny island; apple, wood and basket prices move with what everyone does, and the same island is a private survival benchmark for AI models.
+
+1. Open the host at `http://localhost:8787`.
+2. Scan the QR code on your phone and join the room.
+3. Pick a job—pick apples, chop wood, weave baskets or build a house—and watch the market respond.
+
+[Demo film](demo/village-party-demo.mp4) · [Runbook](demo/RUNBOOK.md) · [Pitch deck](demo/deck/index.html) · **Benchmark:** compare humans, scripted villagers and models on staying fed, warm and solvent.
+
 ---
 
 ## Why it's fun
