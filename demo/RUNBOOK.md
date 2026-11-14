@@ -22,7 +22,7 @@ The village now picks apples in the Orchard and weaves baskets in the Workshop. 
 
 - [ ] Push the repo and make sure the submitted revision is the one on screen.
 - [ ] Update the README and check the demo/runbook links.
-- [ ] GitHub Pages is on (Settings → Pages → Deploy from branch `main`, folder `/docs`); open https://inverseit.github.io/village-party/village-party-demo.mp4 and https://inverseit.github.io/village-party/deck/ once to confirm they load.
+- [ ] GitHub Pages is on (Settings → Pages → Deploy from branch `main`, folder `/` (root)); open https://inverseit.github.io/village-party/docs/village-party-demo.mp4 and https://inverseit.github.io/village-party/docs/deck/ once to confirm they load.
 - [ ] Submit the project link and video before the deadline; don't rely on a saved draft.
 - [ ] Charge the laptop, bring its charger, and test the big-screen display.
 - [ ] Have a phone hotspot ready; test the QR on the same Wi-Fi and, if needed, a tunnel.
