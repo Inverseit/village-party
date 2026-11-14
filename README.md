@@ -9,6 +9,8 @@ villagers who all have their own strategies, personalities and opinions about yo
 
 `Real-time multiplayer` · `AI agents` · `Live market economy` · `Built at Eurasian Hack London with Devin`
 
+**[Pitch deck](docs/pitch.html)** (open in a browser: arrow keys to move, N for speaker notes)
+
 <img src="docs/screenshots/host-hero.jpg" alt="The host screen mid-game: a sunny 3D island in Golden season, players and AI villagers talking in speech bubbles, the round clock and the leaderboard" width="100%">
 
 </div>
