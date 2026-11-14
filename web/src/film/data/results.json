@@ -1,0 +1,701 @@
+{
+  "brain": "scripted",
+  "strategies": [
+    {
+      "strategy": "copycat",
+      "blurb": "copies whatever the current leader did last round",
+      "villagers": 1,
+      "avg": 909,
+      "best": "Liamuel"
+    },
+    {
+      "strategy": "specialist",
+      "blurb": "sticks to the one job they are talented at, whatever the price",
+      "villagers": 2,
+      "avg": 882,
+      "best": "Lukeas"
+    },
+    {
+      "strategy": "landlord",
+      "blurb": "builds houses as early as possible and lives off the rent",
+      "villagers": 2,
+      "avg": 796,
+      "best": "Ethelvis"
+    },
+    {
+      "strategy": "netmaker",
+      "blurb": "weaves baskets to sell, and picks apples with one in between",
+      "villagers": 1,
+      "avg": 733,
+      "best": "Mialexa"
+    },
+    {
+      "strategy": "contrarian",
+      "blurb": "does whatever the fewest villagers did last round",
+      "villagers": 2,
+      "avg": 699,
+      "best": "Dwaynald"
+    },
+    {
+      "strategy": "planner",
+      "blurb": "does the sums and takes whatever pays best right now",
+      "villagers": 2,
+      "avg": 646,
+      "best": "Megandrew"
+    },
+    {
+      "strategy": "trend",
+      "blurb": "chases whatever the most villagers did last round",
+      "villagers": 2,
+      "avg": 633,
+      "best": "Kennifer"
+    },
+    {
+      "strategy": "gambler",
+      "blurb": "picks on a whim",
+      "villagers": 2,
+      "avg": 278,
+      "best": "Rhondald"
+    }
+  ],
+  "recap": null,
+  "id": "mwgi9linmzq2",
+  "code": "QSCC",
+  "rounds": 12,
+  "settings": {
+    "bots": 14,
+    "rounds": 12,
+    "roundSeconds": 7,
+    "chaos": 0,
+    "brain": "scripted"
+  },
+  "startedAt": 1794666795711,
+  "endedAt": 1794666861681,
+  "winner": {
+    "id": 5,
+    "name": "Lukeas",
+    "human": false,
+    "strategy": "specialist",
+    "points": 934,
+    "coins": 934,
+    "houses": 0,
+    "wellbeing": 24
+  },
+  "bestHuman": {
+    "id": 16,
+    "name": "Timur",
+    "human": true,
+    "strategy": null,
+    "points": 756,
+    "coins": 156,
+    "houses": 3,
+    "wellbeing": 24
+  },
+  "bestBot": {
+    "id": 5,
+    "name": "Lukeas",
+    "human": false,
+    "strategy": "specialist",
+    "points": 934,
+    "coins": 934,
+    "houses": 0,
+    "wellbeing": 24
+  },
+  "humansAvg": 390,
+  "botsAvg": 679,
+  "ranking": [
+    {
+      "id": 5,
+      "name": "Lukeas",
+      "human": false,
+      "strategy": "specialist",
+      "points": 934,
+      "coins": 934,
+      "houses": 0,
+      "wellbeing": 24
+    },
+    {
+      "id": 7,
+      "name": "Liamuel",
+      "human": false,
+      "strategy": "copycat",
+      "points": 909,
+      "coins": 509,
+      "houses": 2,
+      "wellbeing": 24
+    },
+    {
+      "id": 13,
+      "name": "Rupertson",
+      "human": false,
+      "strategy": "specialist",
+      "points": 829,
+      "coins": 229,
+      "houses": 3,
+      "wellbeing": 24
+    },
+    {
+      "id": 11,
+      "name": "Ethelvis",
+      "human": false,
+      "strategy": "landlord",
+      "points": 807,
+      "coins": 607,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 3,
+      "name": "Heatherick",
+      "human": false,
+      "strategy": "landlord",
+      "points": 785,
+      "coins": 585,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 16,
+      "name": "Timur",
+      "human": true,
+      "strategy": null,
+      "points": 756,
+      "coins": 156,
+      "houses": 3,
+      "wellbeing": 24
+    },
+    {
+      "id": 9,
+      "name": "Dwaynald",
+      "human": false,
+      "strategy": "contrarian",
+      "points": 748,
+      "coins": 148,
+      "houses": 3,
+      "wellbeing": 24
+    },
+    {
+      "id": 6,
+      "name": "Mialexa",
+      "human": false,
+      "strategy": "netmaker",
+      "points": 733,
+      "coins": 733,
+      "houses": 0,
+      "wellbeing": 24
+    },
+    {
+      "id": 8,
+      "name": "Megandrew",
+      "human": false,
+      "strategy": "planner",
+      "points": 717,
+      "coins": 517,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 4,
+      "name": "Kennifer",
+      "human": false,
+      "strategy": "trend",
+      "points": 676,
+      "coins": 276,
+      "houses": 2,
+      "wellbeing": 24
+    },
+    {
+      "id": 1,
+      "name": "Melvinda",
+      "human": false,
+      "strategy": "contrarian",
+      "points": 649,
+      "coins": 449,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 12,
+      "name": "Colbyson",
+      "human": false,
+      "strategy": "trend",
+      "points": 590,
+      "coins": 390,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 0,
+      "name": "Deanathan",
+      "human": false,
+      "strategy": "planner",
+      "points": 574,
+      "coins": 574,
+      "houses": 0,
+      "wellbeing": 24
+    },
+    {
+      "id": 14,
+      "name": "Ulan",
+      "human": true,
+      "strategy": null,
+      "points": 465,
+      "coins": 465,
+      "houses": 0,
+      "wellbeing": 24
+    },
+    {
+      "id": 2,
+      "name": "Rhondald",
+      "human": false,
+      "strategy": "gambler",
+      "points": 346,
+      "coins": 146,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 17,
+      "name": "Dana",
+      "human": true,
+      "strategy": null,
+      "points": 335,
+      "coins": 135,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 18,
+      "name": "Bek",
+      "human": true,
+      "strategy": null,
+      "points": 233,
+      "coins": 233,
+      "houses": 0,
+      "wellbeing": 24
+    },
+    {
+      "id": 10,
+      "name": "Jessicole",
+      "human": false,
+      "strategy": "gambler",
+      "points": 209,
+      "coins": 9,
+      "houses": 1,
+      "wellbeing": 24
+    },
+    {
+      "id": 15,
+      "name": "Nurgul",
+      "human": true,
+      "strategy": null,
+      "points": 162,
+      "coins": 162,
+      "houses": 0,
+      "wellbeing": 24
+    }
+  ],
+  "awards": [
+    {
+      "title": "Richest",
+      "id": 5,
+      "name": "Lukeas",
+      "human": false,
+      "text": "ended with the most coins"
+    },
+    {
+      "title": "Landlord",
+      "id": 9,
+      "name": "Dwaynald",
+      "human": false,
+      "text": "built the most houses"
+    },
+    {
+      "title": "Best single round",
+      "id": 13,
+      "name": "Rupertson",
+      "human": false,
+      "text": "had the biggest payday in one round"
+    },
+    {
+      "title": "Lumber baron",
+      "id": 5,
+      "name": "Lukeas",
+      "human": false,
+      "text": "chopped the most wood"
+    },
+    {
+      "title": "Sheep",
+      "id": 4,
+      "name": "Kennifer",
+      "human": false,
+      "text": "followed the crowd most often"
+    },
+    {
+      "title": "Lone wolf",
+      "id": 15,
+      "name": "Nurgul",
+      "human": true,
+      "text": "kept picking the job nobody else wanted"
+    },
+    {
+      "title": "Taxpayer of the year",
+      "id": 5,
+      "name": "Lukeas",
+      "human": false,
+      "text": "paid the most surprise tax"
+    }
+  ],
+  "events": [
+    {
+      "round": 3,
+      "event": "shoal"
+    },
+    {
+      "round": 4,
+      "event": "shoal"
+    },
+    {
+      "round": 5,
+      "event": "fire"
+    },
+    {
+      "round": 6,
+      "event": "fire"
+    },
+    {
+      "round": 7,
+      "event": "gulls"
+    },
+    {
+      "round": 9,
+      "event": "storm"
+    },
+    {
+      "round": 10,
+      "event": "tax"
+    }
+  ],
+  "history": [
+    {
+      "round": 1,
+      "prices": {
+        "food": 13.46,
+        "wood": 9.8,
+        "nets": 110
+      },
+      "gdp": 541,
+      "wbRound": 2,
+      "event": null,
+      "crowd": {
+        "gather_food": 2,
+        "build_house": 10,
+        "gather_wood": 4,
+        "craft_net": 3
+      }
+    },
+    {
+      "round": 2,
+      "prices": {
+        "food": 11.58,
+        "wood": 17.91,
+        "nets": 110
+      },
+      "gdp": 572,
+      "wbRound": 2,
+      "event": null,
+      "crowd": {
+        "gather_food": 4,
+        "build_house": 12,
+        "gather_wood": 1,
+        "craft_net": 2
+      }
+    },
+    {
+      "round": 3,
+      "prices": {
+        "food": 6.65,
+        "wood": 13.6,
+        "nets": 110
+      },
+      "gdp": 1415,
+      "wbRound": 2,
+      "event": "shoal",
+      "crowd": {
+        "gather_food": 11,
+        "gather_wood": 5,
+        "build_house": 1,
+        "craft_net": 2
+      }
+    },
+    {
+      "round": 4,
+      "prices": {
+        "food": 5.96,
+        "wood": 12.8,
+        "nets": 85.67
+      },
+      "gdp": 926,
+      "wbRound": 2,
+      "event": "shoal",
+      "crowd": {
+        "gather_food": 5,
+        "gather_wood": 4,
+        "build_house": 7,
+        "craft_net": 3
+      }
+    },
+    {
+      "round": 5,
+      "prices": {
+        "food": 6.9,
+        "wood": 20.73,
+        "nets": 101.48
+      },
+      "gdp": 488,
+      "wbRound": 2,
+      "event": "fire",
+      "crowd": {
+        "gather_food": 9,
+        "build_house": 2,
+        "gather_wood": 7,
+        "craft_net": 1
+      }
+    },
+    {
+      "round": 6,
+      "prices": {
+        "food": 7,
+        "wood": 23.51,
+        "nets": 107.02
+      },
+      "gdp": 558,
+      "wbRound": 2,
+      "event": "fire",
+      "crowd": {
+        "gather_food": 9,
+        "gather_wood": 5,
+        "build_house": 4,
+        "craft_net": 1
+      }
+    },
+    {
+      "round": 7,
+      "prices": {
+        "food": 16.38,
+        "wood": 12.35,
+        "nets": 108.96
+      },
+      "gdp": 1142,
+      "wbRound": 2,
+      "event": "gulls",
+      "crowd": {
+        "gather_wood": 15,
+        "gather_food": 2,
+        "craft_net": 1,
+        "build_house": 1
+      }
+    },
+    {
+      "round": 8,
+      "prices": {
+        "food": 12.3,
+        "wood": 15.43,
+        "nets": 75.12
+      },
+      "gdp": 786,
+      "wbRound": 2,
+      "event": null,
+      "crowd": {
+        "gather_food": 6,
+        "craft_net": 4,
+        "build_house": 7,
+        "gather_wood": 2
+      }
+    },
+    {
+      "round": 9,
+      "prices": {
+        "food": 20.56,
+        "wood": 10.13,
+        "nets": 97.79
+      },
+      "gdp": 685,
+      "wbRound": 2,
+      "event": "storm",
+      "crowd": {
+        "gather_wood": 13,
+        "gather_food": 4,
+        "build_house": 1,
+        "craft_net": 1
+      }
+    },
+    {
+      "round": 10,
+      "prices": {
+        "food": 12.07,
+        "wood": 10.44,
+        "nets": 105.73
+      },
+      "gdp": 985,
+      "wbRound": 2,
+      "event": "tax",
+      "crowd": {
+        "gather_food": 12,
+        "craft_net": 2,
+        "gather_wood": 4,
+        "build_house": 1
+      }
+    },
+    {
+      "round": 11,
+      "prices": {
+        "food": 8.81,
+        "wood": 12.36,
+        "nets": 84.18
+      },
+      "gdp": 877,
+      "wbRound": 2,
+      "event": null,
+      "crowd": {
+        "gather_food": 9,
+        "gather_wood": 3,
+        "craft_net": 2,
+        "build_house": 5
+      }
+    },
+    {
+      "round": 12,
+      "prices": {
+        "food": 7.9,
+        "wood": 10.85,
+        "nets": 100.96
+      },
+      "gdp": 841,
+      "wbRound": 2,
+      "event": null,
+      "crowd": {
+        "gather_food": 8,
+        "gather_wood": 5,
+        "build_house": 5,
+        "craft_net": 1
+      }
+    }
+  ],
+  "scoreLines": [
+    {
+      "id": 5,
+      "name": "Lukeas",
+      "human": false,
+      "points": [
+        208,
+        369,
+        478,
+        581,
+        609,
+        642,
+        720,
+        835,
+        885,
+        759,
+        852,
+        934
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Liamuel",
+      "human": false,
+      "points": [
+        70,
+        228,
+        294,
+        371,
+        311,
+        420,
+        486,
+        589,
+        648,
+        726,
+        821,
+        909
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Rupertson",
+      "human": false,
+      "points": [
+        70,
+        228,
+        293,
+        237,
+        255,
+        285,
+        326,
+        487,
+        408,
+        632,
+        843,
+        829
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Ethelvis",
+      "human": false,
+      "points": [
+        70,
+        3,
+        96,
+        240,
+        286,
+        343,
+        385,
+        484,
+        549,
+        647,
+        730,
+        807
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Heatherick",
+      "human": false,
+      "points": [
+        70,
+        3,
+        96,
+        240,
+        286,
+        343,
+        373,
+        472,
+        527,
+        624,
+        707,
+        785
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Timur",
+      "human": true,
+      "points": [
+        70,
+        228,
+        267,
+        213,
+        224,
+        235,
+        252,
+        413,
+        442,
+        577,
+        770,
+        756
+      ]
+    }
+  ]
+}

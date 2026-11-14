@@ -9,15 +9,26 @@ villagers who all have their own strategies, personalities and opinions about yo
 
 `Real-time multiplayer` · `AI agents` · `Live market economy` · `Built at Eurasian Hack London with Devin`
 
-**[Pitch deck](docs/pitch.html)** (open in a browser: arrow keys to move, N for speaker notes)
+<a href="https://inverseit.github.io/village-party/village-party-demo.mp4"><img src="docs/screenshots/film-poster.jpg" alt="Village Party demo film (86 s): click to play" width="100%"></a>
 
-<img src="docs/screenshots/host-hero.jpg" alt="The host screen mid-game: a sunny 3D island in Golden season, players and AI villagers talking in speech bubbles, the round clock and the leaderboard" width="100%">
+**[▶ Demo film (86 s)](https://inverseit.github.io/village-party/village-party-demo.mp4)** · **[Pitch deck](https://inverseit.github.io/village-party/deck/)** · [Speaker-notes deck](https://inverseit.github.io/village-party/pitch.html) (arrow keys to move, N for notes)
 
 </div>
+
+## Eurasian Hack London
+**Pitch:** your phone is a villager on a tiny island; apple, wood and basket prices move with what everyone does, and the same island is a private survival benchmark for AI models.
+
+1. Open the host at `http://localhost:8787`.
+2. Scan the QR code on your phone and join the room.
+3. Pick a job—pick apples, chop wood, weave baskets or build a house—and watch the market respond.
+
+[Runbook](demo/RUNBOOK.md) · [Film file](docs/village-party-demo.mp4) · [Deck source](docs/deck/index.html) · **Benchmark:** compare humans, scripted villagers and models on staying fed, warm and solvent.
 
 ---
 
 ## Why it's fun
+
+<img src="docs/screenshots/host-hero.jpg" alt="The host screen mid-game: a sunny 3D island in Golden season, players and AI villagers talking in speech bubbles, the round clock and the leaderboard" width="100%">
 
 Most "economy" games have fixed prices. In Village Party, **the price of everything is set by what
 everyone else just did.** If the whole room picks apples, apples are worth nothing. If nobody chops
