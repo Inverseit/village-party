@@ -159,19 +159,19 @@ ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;hei
 </section>
 
 <!-- 5 · AI villagers -->
-<section class="slide dark" data-notes="<b>2:05–2:25</b> The village is never empty: AI villagers fill it up to 60. Each one gets a strategy and a personality, and they really play the same economy you do. The strategy agents are instant and free and react to prices and the crowd; the LLM brain decides for 12 villagers per request, writes their lines, and falls back to the script if it's slow, with a hard budget cap.">
+<section class="slide dark" data-notes="<b>2:05–2:25</b> The village is never empty: AI villagers fill it up to 60. Each one reads the same market you do and decides for itself. The strategy agents are instant and free and react to prices and the crowd; the LLM brain decides for 12 villagers per request, writes their lines, and falls back to the script if it's slow, with a hard budget cap.">
   <div class="bg" style="background-image:url(screenshots/host-hero.jpg);filter:blur(3px) brightness(.6);transform:scale(1.04)"></div>
   <div class="pad">
     <div class="kicker">The AI villagers</div>
-    <h2 class="h">8 strategies × 8 personalities.<br>They play to win,<br>and they talk.</h2>
+    <h2 class="h">Every villager reads the market<br>and decides for itself.<br>And they talk.</h2>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:40px;width:900px">
       <div class="panel">
-        <div class="kicker" style="font-size:15px;color:var(--gold)">Strategies</div>
-        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">planner · contrarian · trend-chaser · landlord · specialist · basket-maker · copycat · gambler</p>
+        <div class="kicker" style="font-size:15px;color:var(--gold)">What they see</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">last round's prices · where the crowd went · the weather · their own purse, food and house</p>
       </div>
       <div class="panel">
-        <div class="kicker" style="font-size:15px;color:var(--gold)">Personalities</div>
-        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">greedy · lazy · paranoid · dreamer · gossip · philosopher · dramatic · competitive</p>
+        <div class="kicker" style="font-size:15px;color:var(--gold)">What they decide</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">which job · what to keep and what to sell · what to say to the room, in their own voice</p>
       </div>
       <div class="panel" style="grid-column:span 2">
         <div class="kicker" style="font-size:15px;color:var(--gold)">Two brains, one benchmark</div>
@@ -204,6 +204,20 @@ ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;hei
         <div class="panel" style="grid-column:1/3;padding:20px 24px"><p style="font-size:20px;margin:0"><b style="color:var(--gold)">Next on the bench:</b> plug any model in as a villager and score it against these baselines on the same seeds. Humans, scripts and LLMs on one leaderboard.</p></div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- league -->
+<section class="slide dark" data-notes="<b>If asked</b> This is the next run, not a result yet. Same seeds, same economy; each model plays villagers that choose their own moves, scored against the measured baselines from the previous slide.">
+  <div style="position:absolute;inset:0;background:radial-gradient(1200px 700px at 20% 0%,#2a2340 0,#14111d 60%)"></div>
+  <div class="pad">
+    <div class="kicker">Model league · hypothesis, next run on the bench</div>
+    <h2 class="h">Which AI survives the island?</h2>
+    <div class="panel" style="margin-top:34px;padding:16px 30px 8px">
+      <div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:800;padding-bottom:8px"><span>Villager</span><span>Type</span><span>What we expect</span></div>
+      <div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>GPT‑6 Luna</b><span class="mono" style="color:var(--dim);font-size:17px">LLM villager</span><span style="color:#e9e4da">Reads the crowd well; we expect it near the top baseline</span></div><div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>GPT‑5.6 Luna</b><span class="mono" style="color:var(--dim);font-size:17px">LLM villager</span><span style="color:#e9e4da">Same prompt, older model: does more reasoning buy more coins?</span></div><div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>Claude Haiku</b><span class="mono" style="color:var(--dim);font-size:17px">LLM villager</span><span style="color:#e9e4da">Fast and cheap: can it keep up with 6‑second rounds?</span></div><div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>Claude Sonnet</b><span class="mono" style="color:var(--dim);font-size:17px">LLM villager</span><span style="color:#e9e4da">Our bet for planning ahead: houses before apples</span></div><div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>Humans</b><span class="mono" style="color:var(--dim);font-size:17px">phones</span><span style="color:#e9e4da">The room. Who beats whom is the show</span></div><div style="display:grid;grid-template-columns:260px 230px 1fr;gap:18px;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);font-size:22px"><b>Orchard investor</b><span class="mono" style="color:var(--dim);font-size:17px">baseline · measured</span><span style="color:var(--mint)">1,114 pts, 31% wins over 1,000 games</span></div>
+    </div>
+    <p style="margin-top:22px;font-size:20px;color:var(--dim)">Same seeds, same economy, one leaderboard. The bench is built; the league is the next run.</p>
   </div>
 </section>
 
