@@ -1,0 +1,18 @@
+/* The host screen: one full-window stage. The island fills it; the party overlay lies over it. */
+
+html, body { margin: 0; padding: 0; height: 100%; background: #0c0d0f; }
+body { overflow: hidden; }
+* { box-sizing: border-box; }
+#root { position: fixed; inset: 0; }
+
+/* the place card: the veil behind it and the card itself; in it, the lineup's villagers
+   drop into line and hop out */
+@keyframes veilin { from { opacity: 0 } to { opacity: 1 } }
+@keyframes veilout { from { opacity: 1 } to { opacity: 0 } }
+@keyframes cardin { from { opacity: 0; transform: translateY(10px) scale(.985) } to { opacity: 1; transform: none } }
+@keyframes cardout { from { opacity: 1; transform: none } to { opacity: 0; transform: translateY(6px) scale(.99) } }
+@keyframes blobin { 0% { opacity: 0; transform: translateY(-14px) scale(.7) } 60% { opacity: 1 } 100% { opacity: 1; transform: none } }
+@keyframes blobout { 0% { opacity: 1; transform: none } 40% { transform: translateY(-10px) scale(1.04) } 100% { opacity: 0; transform: translateY(6px) scale(.6) } }
+
+::-webkit-scrollbar { width: 8px; height: 8px }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 8px }

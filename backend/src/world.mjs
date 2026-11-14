@@ -1,0 +1,1256 @@
+// The village, turn by turn: every round all agents decide, then everyone works a shift,
+// eats, keeps warm, goods rot, and each round's orders clear on-chain.
+// Goods changes are queued as deltas and settled on Solana each round; after every round
+// the local view is replaced by what the chain says. The chain is the source of truth —
+// this file is a fast mirror.
+import { CFG, GOODS, FOOD, WOOD, NETS, SMOKED, HOUSES } from './config.mjs';
+import { BANK, PLEDGEABLE, FIRE_SALE_BPS, FORGIVE_BELOW, collectable, accruedDebt, dividendPerAgent } from './chain.mjs';
+import { villagerNames } from './names.mjs';
+
+// Gini coefficient of non-negative values: 0 = all equal, 1 = one holds everything.
+export function gini(xs) {
+  const v = [...xs].sort((a, b) => a - b), n = v.length, sum = v.reduce((s, x) => s + x, 0);
+  return n && sum ? v.reduce((acc, x, i) => acc + (2 * (i + 1) - n - 1) * x, 0) / (n * sum) : 0;
+}
+
+export function createWorld(chain, initial, { onEvent = () => {} } = {}) {
+  // Agents whose purse may no longer match their ledger cash. An entry survives a failed
+  // settle_cash, so a purse that misses one pass is caught by the next rather than
+  // drifting until that agent happens to trade again.
+  const unsettledPurses = new Set();
+  // What every purse held the last time settle_cash went through, per agent. The server
+  // settles every purse before the first round, so it starts as the opening cash. Anything
+  // the ledger says differs from this needs moving.
+  let purseCash = initial.slots.map(s => s.cash);
+  let seed = CFG.SEED;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  // Round a fractional amount up or down at random, so the expected value is exact.
+  const roll = x => { const n = Math.floor(x); return n + (rnd() < x - n ? 1 : 0); };
+  // Talents: every villager is strong at one job, middling at a second and poor at the third
+  // (CFG.TALENT: a range for each). Which job is the strong one goes round the village in
+  // turn from a random start, so a small village still has some of every trade; which of the
+  // other two is the weak one is a coin toss. Totals differ a little, as people's do.
+  const JOBS = ['gather_food', 'gather_wood', 'craft_net'], jobShift = Math.floor(rnd() * 3);
+  const draw = ([lo, hi]) => +(lo + rnd() * (hi - lo)).toFixed(2);
+  const talents = i => {
+    const strong = (i + jobShift) % 3, rest = [0, 1, 2].filter(j => j !== strong), mid = rest[rnd() < 0.5 ? 0 : 1];
+    return Object.fromEntries(JOBS.map((job, j) => [job, draw(j === strong ? CFG.TALENT.strong : j === mid ? CFG.TALENT.mid : CFG.TALENT.weak)]));
+  };
+
+  // Fixed prices for real GDP, in cents: the opening price of each good. A house opens at what
+  // it takes to make (its wood plus its shifts of gathering), so START_PRICES is the whole
+  // story. (A good opened at the chain's 1-cent minimum is a dead slot and counts for nothing.)
+  const REAL_PRICES = CFG.START_PRICES.map(p => p > 1 ? p : 0);
+  const none = () => GOODS.map(() => 0);
+  // What a round uses up, by purpose: `used` in the round event (wood by fires, upkeep, nets, houses).
+  const noUse = () => ({ eaten: 0, fires: 0, upkeep: 0, netWood: 0, buildWood: 0, smokeFood: 0, smokeWood: 0, smokedEaten: 0 });
+  // Wellbeing by source. One place for the keys: credit() adds into these, so a part missing
+  // from any of them turns the total into NaN.
+  const noWb = () => ({ eating: 0, warmth: 0, house: 0, smoked: 0 });
+  const list = q => q.map((n, g) => n ? `${n} ${n === 1 ? GOODS[g].replace(/s$/, '') : GOODS[g]}` : '').filter(Boolean).join(' and ');
+  const names = villagerNames(initial.slots.length, CFG.SEED);
+  const agents = initial.slots.map((s, i) => ({
+    id: i,
+    name: names[i],
+    cash: s.cash, goods: [...s.goods],              // mirror: chain + pending deltas
+    chain: { cash: s.cash, goods: [...s.goods] },   // last confirmed on-chain state
+    locked: none(), debt: 0, principal: 0, dueSlot: 0, accruedSlot: 0,   // the bank loan, mirrored from chain (debt as last accrued)
+    dueRound: null,                                 // the round the loan is due at (the chain counts slots; see TERM_SLACK)
+    activity: null,                               // this round's shift (kept after it's worked, for the dashboard)
+    lastJob: null,                                  // last round's shift: kept when the agent doesn't answer in time
+    orders: [],                                     // this round's orders: { agent, side, good, qty, limit, seq }; all expire when it clears
+    draft: null,                                    // orders posted during the decision in progress; they become `orders` when it ends
+    hunger: 0, cold: 0,
+    lifestyle: CFG.LIFESTYLE_START,                 // food per meal, the agent's standing choice
+    wellbeing: 0,                                   // total over the run: the goal, and the whole score
+    wbParts: noWb(),                                // the same total, by source
+    wbNow: noWb(),                                  // the meal period in progress
+    wbRecent: [],                                   // the last few meal periods, by source
+    shifts: { gather_food: 0, gather_wood: 0, craft_net: 0, build_house: 0, smoke_fish: 0, idle: 0 },   // finished shifts, by kind (idle = not chosen)
+    building: null,                                 // a house under construction: { done (progress, out of build_house.shifts), shifts worked, wood paid in so far } (it is already one of goods[HOUSES])
+    housesBuilt: 0,
+    fills: null,                                    // how the agent's orders did in the last round it traded in
+    madeRound: none(),                              // what this round's shift produced, per good (the stall's "sold out" is measured against it)
+    stallLast: none().map(() => null),              // per good: what the stall offered and sold last round, { offered, sold } (null = it offered none)
+    warmPhase: i % CFG.WARM_ROUNDS,
+    thought: '',                                    // only ever the model's own words (tools.mjs `reason`, or the brain's text)
+    memory: [],
+    journal: [],                                    // every memory line of the run, timestamped (dashboard only)
+    traits: { patience: +rnd().toFixed(2), risk: +rnd().toFixed(2) },
+    skills: talents(i),
+    upkeepPaid: 0,                                  // houses whose upkeep wood was paid last round
+    // The market stall: a fixed sale habit per good, { keep, min } out of CFG.STALL — every
+    // round whatever is held above `keep` is offered at `min` (cents) or better. The agent
+    // cannot rewrite it (see CFG.STALL); its own place_order for a good replaces it that round.
+    // Producers everywhere bring their goods to market without deciding to each morning.
+    // `ask` is what the stall asks now: it starts at the going price, is marked down when nothing
+    // sells and up when it sells out (CFG.REPRICE), and never goes below `min`. It never sells
+    // below the shopping list's target for the same good either (W.stallReserve).
+    sale: GOODS.map((_, g) => CFG.STALL[g] ? { keep: CFG.STALL[g].keep, min: Math.round(CFG.START_PRICES[g] * CFG.STALL[g].min), ask: CFG.START_PRICES[g] } : null),
+    // The shopping list: a fixed purchase habit per good, { target, max } out of CFG.SHOP — every
+    // round the agent bids for whatever it holds short of `target`, at up to `max` (cents). Households buy
+    // their necessities by habit, not by remembering to each morning.
+    // `bid` is what it offers now: raised when it gets nothing, eased when it gets everything, never above `max`.
+    shop: GOODS.map((_, g) => CFG.SHOP[g] ? { target: CFG.SHOP[g].target, max: Math.round(CFG.START_PRICES[g] * CFG.SHOP[g].max), bid: CFG.START_PRICES[g] } : null),
+    decisions: 0,
+  }));
+  for (const a of agents) a.talent = JOBS.reduce((best, j) => a.skills[j] > a.skills[best] ? j : best);   // the job born strongest at (logged)
+
+  const W = {
+    agents, tick: 0, round: 0,
+    prices: [...initial.lastPrice],
+    priceHistory: [], volumes: none(),
+    pending: [], seq: 0,                             // seq: arrival order of orders, for price-time priority
+    events: [], roundBusy: false, lastRound: null, lastBook: null, settlersSupply: null,
+    lastLadder: null,                                // last round's book before clearing, per good (D6)
+    bankSale: {},                                    // per good: the bank's descending sale of seized goods, { anchor, k }
+    slotsPerRound: CFG.ROUND_MS_GUESS / CFG.SLOT_MS, roundMs: CFG.ROUND_MS_GUESS,   // measured every round
+    loanOps: [], opsInflight: [],                    // borrow/repay requests for the next round / being sent now
+    bankLog: [],                                     // every loan, repayment and foreclosure, for the dashboard
+    slot: 0,                                         // the chain's clock, read every round
+    bank: null,                                      // the bank's books, from the chain every round
+    overdue: 0,                                      // foreclosures so far (the keeper only acts on overdue loans)
+    autoRepaid: 0,                                   // overdue loans collected from the debtor's cash, no penalty
+    housesBuilt: 0,                                  // houses finished so far
+    made: none(), shiftsNow: { worked: 0, idle: 0 },  // this round's output and finished shifts (for GDP, employment)
+    used: noUse(),                                   // this round's consumption, by purpose (logged)
+    slotAt: Date.now(),                              // when W.slot was read
+    roundSlot: initial.slot, roundAt: Date.now(),    // the chain's slot and the time when the last round ended
+  };
+  const bankView = L => ({ supply: L.supply, debtTotal: L.debtTotal, debtTotalNow: L.debtTotalNow, badDebt: L.badDebt, goods: [...L.bank.goods], cash: L.bank.cash, bankBook: [...L.bankBook],
+    terms: L.terms, books: L.books, equity: L.equity, lendingCap: L.lendingCap, capitalRequired: L.capitalRequired });
+  W.bank = bankView(initial);
+  W.slot = initial.slot;
+
+  const emit = (type, data) => {
+    const e = { t: Date.now(), tick: W.tick, type, ...data };
+    W.events.push(e); if (W.events.length > 300) W.events.shift();
+    onEvent(e);
+  };
+  // `memory` is what the villager is shown next turn: the last six lines, no more. `journal`
+  // is the same lines kept for the whole run, for the dashboard's per-agent log — the agent
+  // never sees it, so keeping it changes nothing about how anyone decides.
+  const remember = (a, line) => {
+    a.memory.push(line); if (a.memory.length > 6) a.memory.shift();
+    a.journal.push({ t: Date.now(), line }); if (a.journal.length > 3000) a.journal.shift();
+  };
+
+  // ---- the control panel (tunables.mjs) -----------------------------------------
+  // A dial moved mid-run changes the economics, and the villagers are told what changed as
+  // a plain fact — never as advice, and never a number the simulation doesn't actually use.
+  // (Everything they are shown each turn is read live from CFG anyway, so this only makes
+  // the change hard to miss; it is not the only way they learn of it.)
+  W.announce = lines => {
+    for (const line of [].concat(lines)) for (const a of agents) remember(a, line);
+    emit('announce', { round: W.round + 1, lines: [].concat(lines) });
+  };
+  // Every change, with the round it landed on: the dashboard marks its charts there, and
+  // analyze.mjs can line a run's kinks up against the levers that caused them.
+  W.policyLog = [];
+  W.notePolicy = moved => {
+    const entry = { round: W.round + 1, at: Date.now(), changes: moved };
+    W.policyLog.push(entry);
+    emit('policy', entry);
+  };
+
+  // ---- reservations: what an agent has promised to its orders -----------------
+  // During a decision, the orders posted so far; after it, this round's orders.
+  const ordersOf = a => a.draft ?? a.orders;
+  // A bid for a house holds no cash back: nobody stops eating while they wait for a builder.
+  // Houses clear last, on whatever cash is left by then (round() trims every bid to the cash there is).
+  W.reservedCash = a => ordersOf(a).filter(o => o.side === 'buy' && o.good !== HOUSES).reduce((s, o) => s + o.qty * o.limit, 0);
+  W.reservedGood = (a, g) => ordersOf(a).filter(o => o.side === 'sell' && o.good === g).reduce((s, o) => s + o.qty, 0);
+  W.availCash = a => a.cash - W.reservedCash(a);
+  W.availGood = (a, g) => a.goods[g] - W.reservedGood(a, g);
+
+  const addDelta = (a, g, delta) => { W.pending.push({ agent: a.id, good: g, delta }); a.goods[g] += delta; };
+
+  // Pledged goods stay usable (a lien, not a pawn shop): for USING a net or living in a
+  // house, pledged units count. Selling, pledging and consuming use free goods only.
+  W.owned = (a, g) => a.goods[g] + a.locked[g];
+  W.usableNets = a => Math.max(0, W.availGood(a, NETS)) + a.locked[NETS];
+  // An unfinished house is on-chain (one of goods or locked) but is not a home yet.
+  W.unfinished = a => a.building ? 1 : 0;
+  W.houses = a => Math.max(0, W.owned(a, HOUSES) - W.unfinished(a));   // finished houses owned, pledged ones too; several are worth having
+  W.hasHouse = a => W.houses(a) >= 1;
+  // What n houses pay a meal period: WELLBEING.HOUSE in order, its last figure repeating.
+  // houseAdds: what the n-th house (1-based) adds on its own.
+  const HWB = CFG.WELLBEING.HOUSE;
+  W.houseAdds = n => HWB[Math.min(n, HWB.length) - 1];
+  W.houseWB = n => { let s = 0; for (let i = 1; i <= n; i++) s += W.houseAdds(i); return s; };
+  // What can be sold: free goods, less a house under construction. Pledged houses are
+  // counted as the unfinished one first, so a free finished house stays sellable.
+  const holdable = (a, g) => a.goods[g] - (g === HOUSES ? Math.max(0, W.unfinished(a) - a.locked[HOUSES]) : 0);
+  W.sellable = (a, g) => holdable(a, g) - W.reservedGood(a, g);
+  // A house costs the same wood for everyone: crafting skill buys speed (W.buildSkill), not
+  // cheaper wood. Dividing it by skill was perverse — the agents with the wood are the ones
+  // with the worst crafting, and they were quoted several times what the crafters were.
+  W.houseWood = () => CFG.TASKS.build_house.wood;
+
+  // ---- wellbeing: the goal ------------------------------------------------------
+  const credit = (a, part, x) => { a.wellbeing += x; a.wbParts[part] += x; a.wbNow[part] += x; };
+  // Fishing conditions, one multiplier. A function, not a constant: Phase 5 moves it mid-run.
+  W.catch = () => CFG.CATCH;
+  // Sell-through over the last few rounds: units sold of units offered, per good (1 when nothing was offered).
+  W.recentSales = (g, rounds = 5) => {
+    const h = W.priceHistory.slice(-rounds);
+    return { sold: h.reduce((s, r) => s + (r.volumes[g] ?? 0), 0), offered: h.reduce((s, r) => s + (r.offered?.[g] ?? 0), 0) };
+  };
+  // Net worth: cash, plus every good held (pledged too) at its last price, minus debt with the
+  // interest accrued to now. A house under construction counts as the wood in it. Cents.
+  // It is no longer part of the score — only collateral, the standings and the metrics use it.
+  W.wealth = a => a.cash - W.debtNow(a) + GOODS.reduce((s, _, g) => s + W.owned(a, g) * W.prices[g], 0) -
+    (a.building ? W.prices[HOUSES] - a.building.wood * W.prices[WOOD] : 0);
+  W.setLifestyle = (a, level) => {
+    level = Math.round(Number(level));
+    if (!(level >= 1 && level <= 3)) return 'Lifestyle must be 1, 2 or 3 (food per meal).';
+    if (level !== a.lifestyle) emit('lifestyle', { agent: a.id, name: a.name, from: a.lifestyle, to: level });
+    a.lifestyle = level;
+    return null;
+  };
+
+  // What a unit would fetch now: if buyers went short last round, their best bid; else the last price.
+  W.fetch = g => { const L = W.lastLadder?.[g]; return L && L.wanted > L.sold && L.bids.top[0] ? Math.max(L.bids.top[0][0], W.prices[g]) : W.prices[g]; };
+
+  // ---- what a shift of each job is worth to an agent, in cents --------------------
+  // `raw` is output at what buyers paid (or bid and didn't get); `sure` discounts it by how much of
+  // what was offered lately actually sold — a price is only worth what sells at it. `can`: the
+  // agent has the materials for it right now (`lack`: what it is short of, per good, when not).
+  W.through = g => { const r = W.recentSales(g, 3); return r.offered ? Math.min(1, r.sold / r.offered) : 1; };
+  // Every good is discounted the same way. Goods that keep (nets, houses) once had a gentler
+  // rule (0.55 + 0.45 × sell-through), so a net nobody bid for still read as more than half its
+  // price: with zero net bids crafting showed "≈14", sat above a glutted fishing shift, and
+  // became the job villagers fell back on — 100 unsold nets in a 100-round run. A net that does
+  // not sell pays its maker nothing, whether or not it rots.
+  W.sure = (x, g) => x > 0 ? x * (0.15 + 0.85 * W.through(g)) : x;
+  W.jobValues = a => {
+    const F = CFG.TASKS.gather_food, P = W.prices, wood = W.availGood(a, WOOD);
+    const fish = (W.usableNets(a) ? F.netYield : F.yield) * W.skill(a, 'gather_food') * W.catch() * P[FOOD];
+    const cut = CFG.TASKS.gather_wood.yield * W.skill(a, 'gather_wood') * P[WOOD];
+    const craft = W.fetch(NETS) - W.netWood(a) * P[WOOD];
+    const build = (W.fetch(HOUSES) - W.houseWood(a) * P[WOOD]) / W.buildShiftsFor(a);
+    // Smoking: the pieces this villager's crafting makes, less the food and wood that go in —
+    // the same inputs for everyone, so a weak crafter's one piece can be worth less than them.
+    const S = CFG.TASKS.smoke_fish, smoke = W.smokePieces(a) * W.fetch(SMOKED) - S.food * P[FOOD] - S.wood * P[WOOD];
+    const lack = W.smokeLack(a);
+    const short = (need, g = WOOD) => { const q = none(); q[g] = Math.max(0, need - wood); return q; };
+    return [
+      { task: 'gather_food', raw: fish, sure: W.sure(fish, FOOD), can: true },
+      { task: 'gather_wood', raw: cut, sure: W.sure(cut, WOOD), can: true },
+      { task: 'craft_net', raw: craft, sure: W.sure(craft, NETS), can: wood >= W.netWood(a), needs: W.netWood(a), lack: short(W.netWood(a)) },
+      { task: 'build_house', raw: build, sure: W.sure(build, HOUSES), can: wood >= W.trancheWood(a), needs: W.trancheWood(a), lack: short(W.trancheWood(a)) },
+      // last: tools.mjs reads the first four by position
+      { task: 'smoke_fish', raw: smoke, sure: W.sure(smoke, SMOKED), can: !lack.some(Boolean), lack },
+    ];
+  };
+  // The trade an agent falls back on (no answer, or short of wood for the job it asked for):
+  // the best-paying job it has the materials for, by `sure` — so never crafting while nets go
+  // unsold, unless everything else is selling worse.
+  // It never smokes the round's meal: the inputs are taken before the meal is eaten, and a
+  // villager who did not choose that should not go hungry for it.
+  W.bestDoable = a => W.jobValues(a).filter(j => j.can && (j.task !== 'smoke_fish' ||
+    W.availGood(a, FOOD) - CFG.TASKS.smoke_fish.food >= a.lifestyle * CFG.MEAL)).sort((x, y) => y.sure - x.sure)[0].task;
+  // ---- skills: how good an agent is at each kind of work -----------------------
+  W.skill = (a, task) => a.skills[task] ?? 1;
+  // Crafting divides a wood bill rather than multiplying a yield, so the full skill range
+  // would swing a net between 8 and 100 wood. Clamped, the spread is 4× either way.
+  W.craftSkill = a => Math.min(CFG.CRAFT_CLAMP[1], Math.max(CFG.CRAFT_CLAMP[0], W.skill(a, 'craft_net')));
+  W.netWood = a => Math.max(1, Math.round(CFG.TASKS.craft_net.wood / W.craftSkill(a)));
+  // Smoked fish is the same skill the other way round: it multiplies what comes out of a fixed
+  // bill of food and wood. smokeLack: what the agent is short of for one shift, per good.
+  W.smokePieces = a => Math.max(0, Math.round(CFG.TASKS.smoke_fish.yield * W.craftSkill(a)));
+  W.smokeLack = a => { const S = CFG.TASKS.smoke_fish, q = none();
+    q[FOOD] = Math.max(0, S.food - W.availGood(a, FOOD)); q[WOOD] = Math.max(0, S.wood - W.availGood(a, WOOD)); return q; };
+  // Crafting is the maker's skill for houses too: a build_house shift adds this much progress,
+  // and a house needs build_house.shifts of it. The wood stays flat (see W.houseWood).
+  // Read from CFG on every call, never captured: the control panel moves these mid-run
+  // (tunables.mjs), and a captured copy would go on quoting the old village.
+  const BUILD = () => CFG.TASKS.build_house.shifts;
+  W.buildSkill = a => Math.min(CFG.BUILD_CLAMP[1], Math.max(CFG.BUILD_CLAMP[0], W.skill(a, 'craft_net')));
+  W.buildShiftsFor = a => Math.ceil(BUILD() / W.buildSkill(a));                  // a fresh house, whole shifts
+  W.buildShiftsLeft = a => a.building ? Math.max(0, Math.ceil((BUILD() - a.building.done - 1e-9) / W.buildSkill(a))) : W.buildShiftsFor(a);
+  // Building is paid for as it goes: the wood still owed is spread evenly over the shifts the
+  // builder still needs (a 2.0 crafter pays 20 × 3, a 1.0 crafter 10 × 6), so a builder needs
+  // one shift's materials to start, not all of them. Charging by progress instead asked a fast
+  // builder for two thirds of the wood up front, and crafters — who hold no wood — never got started.
+  W.trancheWood = a => {
+    const owed = W.buildWoodLeft(a), left = BUILD() - (a.building?.done ?? 0), step = W.buildSkill(a);
+    return Math.max(0, Math.ceil(owed / Math.max(1, Math.ceil((left - 1e-9) / step))));
+  };
+  W.buildWoodLeft = a => W.houseWood(a) - (a.building?.wood ?? 0);   // wood the house in hand (or a fresh one) still takes
+  // A good nobody has ever traded has no price: what agents are shown is what it costs to
+  // make (nets, houses), never the opening price, which nobody paid.
+  W.traded = g => W.priceHistory.some(r => r.volumes[g] > 0);
+
+  // ---- what agents can do (called through tools.mjs) --------------------------
+  // kept: the agent didn't decide in time and repeats its last job.
+  W.startActivity = (a, task, { kept = false } = {}) => {
+    const T = CFG.TASKS[task];
+    if ((task === 'craft_net' || task === 'build_house') && !kept) {
+      const wood = task === 'craft_net' ? W.netWood(a) : W.trancheWood(a), have = W.availGood(a, WOOD);
+      if (have < wood) {
+        a.materials = wood;                               // the shopping list orders it, the stall stops selling it
+        const other = W.bestDoable(a);
+        W.startActivity(a, other);
+        if (a.activity) a.activity.redirected = true;     // logged as shiftWhy
+        a.note = `You are ${wood - have} wood short for that (${wood} needed, ${have} free), so this shift you ${other === 'gather_wood' ? 'cut wood' : other === 'gather_food' ? 'fish' : 'work'} instead. ` +
+          `Your shopping list now orders the wood and your stall holds it back; try again next round.`;
+        return null;
+      }
+    }
+    if (task === 'smoke_fish') {
+      // Short of either input: the same redirect as above, and the list is told both (W.makerWood, W.makerFood).
+      const S = T, lack = W.smokeLack(a);
+      if (lack.some(Boolean)) {
+        if (kept) return `You need ${S.food} food and ${S.wood} wood to smoke fish; you are ${list(lack)} short.`;
+        a.materials = S.wood; a.materialsFood = S.food;
+        const other = W.bestDoable(a);
+        W.startActivity(a, other);
+        if (a.activity) a.activity.redirected = true;
+        a.note = `You are ${list(lack)} short for that (${S.food} food and ${S.wood} wood needed, ${W.availGood(a, FOOD)} and ${W.availGood(a, WOOD)} free), so this shift you ${other === 'gather_wood' ? 'cut wood' : other === 'gather_food' ? 'fish' : 'work'} instead. ` +
+          `Your shopping list now orders what is missing and your stall holds it back; try again next round.`;
+        return null;
+      }
+      addDelta(a, FOOD, -S.food); addDelta(a, WOOD, -S.wood); a.materials = 0; a.materialsFood = 0;
+      W.used.smokeFood += S.food; W.used.smokeWood += S.wood;
+    }
+    if (task === 'craft_net') {
+      const wood = W.netWood(a);
+      if (W.availGood(a, WOOD) < wood) return `You need ${wood} wood to craft a net; you have ${W.availGood(a, WOOD)} free.`;
+      addDelta(a, WOOD, -wood); a.materials = 0; W.used.netWood += wood;
+    }
+    if (task === 'build_house') {
+      // every building shift uses its share of the wood; a new build's (unfinished) house exists from the next settle
+      const wood = W.trancheWood(a);
+      if (W.availGood(a, WOOD) < wood) return `This building shift uses ${wood} wood; you have ${W.availGood(a, WOOD)} free. Cut or buy ${wood - W.availGood(a, WOOD)} more.`;
+      if (!a.building) { addDelta(a, HOUSES, 1); a.building = { done: 0, shifts: 0, wood: 0 }; emit('build_start', { agent: a.id, name: a.name, wood }); }
+      addDelta(a, WOOD, -wood); a.materials = 0; W.used.buildWood += wood;
+      a.building.wood += wood;
+    }
+    a.activity = { task, place: T.place, ...(kept ? { kept } : {}) };
+    emit('activity', { agent: a.id, name: a.name, task, ...(kept ? { kept } : {}) });
+    return null;
+  };
+  // No decision in time (or no shift chosen): the agent keeps its last job if it still can.
+  W.keepJob = a => {
+    // No shift chosen: nobody stands in the square all day — they work their trade, the
+    // best-paying job they have the materials for.
+    if (W.startActivity(a, W.bestDoable(a), { kept: true })) W.startActivity(a, 'idle', { kept: true });
+  };
+
+  // ---- a decision: the orders it posts are the agent's orders for this round -------
+  W.beginDecision = a => {
+    a.draft = [];
+    a.lastJob = a.activity;
+    a.activity = null;
+  };
+  // The wood a maker's next shift would use: a build in hand's next share, or — keyed on the
+  // last shift worked, like the net rule below — a net's wood for someone who just crafted and
+  // a fresh house's first share for someone who just built; never less than what a refused
+  // craft or build asked for (a.materials). The list used to order it only for a build already
+  // in hand or after a refusal, so a maker found out a shift too late: 101 of 301 build
+  // requests in a 100-round run were redirected for lack of wood, median 10 short of 20,
+  // while the list's wood bids filled 95%.
+  W.makerWood = a => {
+    const t = a.lastJob?.task;
+    const next = a.building || t === 'build_house' ? W.trancheWood(a) : t === 'craft_net' ? W.netWood(a) : t === 'smoke_fish' ? CFG.TASKS.smoke_fish.wood : 0;
+    return Math.max(next, a.materials ?? 0);
+  };
+  // The same for the food a smoker's next shift takes: without it the list tops the larder up
+  // to two meals and the stall sells the rest, and a crafter has to go and fish for its inputs.
+  W.makerFood = a => Math.max(a.lastJob?.task === 'smoke_fish' ? CFG.TASKS.smoke_fish.food : 0, a.materialsFood ?? 0);
+  // What the shopping list keeps the agent topped up to, per good (0 = not on the list). Food
+  // is never less than two meals at the agent's lifestyle; a maker's wood includes the next
+  // shift's materials (W.makerWood). A net is wanted only by a villager whose last shift was fishing and who
+  // has no usable net: a fisher replaces a torn net by habit, a woodcutter does not buy one.
+  W.shopTarget = (a, g) => {
+    const plan = a.shop[g];
+    if (!plan) return 0;
+    if (g === NETS) return a.lastJob?.task === 'gather_food' && !W.usableNets(a) ? plan.target : 0;
+    // Nobody bids for smoked fish on the way to the smokehouse: this shift makes their own.
+    if (g === SMOKED && a.activity?.task === 'smoke_fish') return 0;
+    return g === FOOD ? Math.max(plan.target, 2 * a.lifestyle * CFG.MEAL) + W.makerFood(a)
+      : g === WOOD ? plan.target + W.makerWood(a) : plan.target;
+  };
+  // What the coming round's meal, fire and upkeep will take out of the agent's stock before the
+  // market clears. The list bids on stock net of it: bidding up to the target on what was held
+  // BEFORE the meal left the larder a meal short of it afterwards, rot took a tenth more, and
+  // the next meal came before the next market — 9% of hungry agent-rounds in a 100-round run.
+  W.roundUse = (a, g) => {
+    const held = Math.max(0, a.goods[g]);
+    if (g === FOOD) return Math.min(held, a.lifestyle * CFG.MEAL);
+    if (g === SMOKED) return Math.min(held, 1);          // one piece a round, if there is one
+    if (g !== WOOD) return 0;
+    const fire = (W.round + 1 + a.warmPhase) % CFG.WARM_ROUNDS === 0 ? CFG.FIRE_WOOD : 0;
+    return Math.min(held, fire + W.houses(a) * CFG.HOUSE_UPKEEP);
+  };
+  // What the stall holds back: its own `keep` (plus, for wood, what a build in hand or a
+  // maker's next shift still needs), and never less than the shopping list's target plus what this
+  // round will use — the level below which the list would bid. When `keep`
+  // sat below `target` (10 against 14 food at birth) the stall sold the stock in between and
+  // the list, seeing the stall's ask as "an order for it", never bought it back: the larder
+  // drifted down to `keep`, one bad round from empty, and 60% of hungry agent-rounds came
+  // from exactly that. Selling down to a level you would buy back up to is not a plan.
+  W.stallReserve = (a, g) => {
+    const plan = a.sale[g];
+    if (!plan) return Infinity;
+    const need = g === FOOD ? W.makerFood(a) : g !== WOOD ? 0 : a.building ? W.buildWoodLeft(a) : W.makerWood(a);
+    return Math.max(plan.keep + need, W.shopTarget(a, g) + W.roundUse(a, g));
+  };
+  // ok: the agent answered in time. Otherwise it has no orders this round.
+  // Then the stall: for every good with a sale plan and no sell order of the agent's own this
+  // round, what is held above the reserve is offered at the plan's asking price — answered or not.
+  W.endDecision = (a, ok) => {
+    a.orders = ok ? a.draft : []; a.draft = null;
+    a.sale.forEach((plan, g) => {
+      if (!plan || a.orders.some(o => o.good === g && o.side === 'sell')) return;
+      const bids = a.orders.filter(o => o.good === g && o.side === 'buy');
+      if (bids.some(o => o.limit >= plan.ask)) return;   // never trade with yourself
+      const qty = Math.floor(W.sellable(a, g) - W.stallReserve(a, g));
+      if (qty < 1) return;
+      const o = { agent: a.id, side: 'sell', good: g, qty, limit: plan.ask, seq: ++W.seq, stall: true };
+      a.orders.push(o);
+      emit('order', { agent: a.id, name: a.name, side: 'sell', good: GOODS[g], qty, price: plan.ask, seq: o.seq, stall: true });
+    });
+  };
+  // The shopping list, after the stall: bid for what will be short of the target once this
+  // round's meal and fire are taken (W.roundUse), as far as free cash goes.
+  // Only an order the agent placed ITSELF for the good stands the list down — its stall's ask
+  // does not. The stall sells only above the target and the list buys only below it
+  // (W.stallReserve), so the two never fire for the same good and never cross.
+  const endStall = W.endDecision;
+  W.endDecision = (a, ok) => {
+    endStall(a, ok);
+    a.shop.forEach((plan, g) => {
+      if (!plan || a.orders.some(o => o.good === g && !o.stall)) return;   // the agent's own order for it this round
+      if (a.orders.some(o => o.good === g && o.stall && o.limit <= plan.bid)) return;   // can't happen (see above); never trade with yourself
+      const target = W.shopTarget(a, g);
+      const free = a.cash - a.orders.filter(o => o.side === 'buy' && o.good !== HOUSES).reduce((t, o) => t + o.qty * o.limit, 0);
+      const qty = Math.min(target - (W.owned(a, g) - W.roundUse(a, g)), Math.floor(free / plan.bid));
+      if (qty < 1) return;
+      const o = { agent: a.id, side: 'buy', good: g, qty, limit: plan.bid, seq: ++W.seq, shop: true };
+      a.orders.push(o);
+      emit('order', { agent: a.id, name: a.name, side: 'buy', good: GOODS[g], qty, price: plan.bid, seq: o.seq, shop: true });
+    });
+  };
+  W.placeOrder = (a, side, g, qty, limit, reason) => {
+    qty = Math.floor(qty); limit = Math.round(limit);
+    if (!a.draft) return 'This round has already run; nothing was done.';
+    if (qty < 1 || limit < 1) return 'Quantity and price must be positive.';
+    // no trading with yourself: a self-trade could print a price (the collateral price) in an empty book
+    const cross = a.draft.find(o => o.good === g && o.side !== side && (side === 'buy' ? o.limit <= limit : o.limit >= limit));
+    if (cross) return `That would cross your own ${cross.side} order for ${GOODS[g]} at ${(cross.limit / 100).toFixed(2)}: you can't trade with yourself.`;
+    // a house bid beyond the agent's cash is posted at its cash: said in the reply (tools.mjs), not refused
+    if (side === 'buy' && g === HOUSES) { qty = 1; limit = Math.min(limit, a.cash); if (limit < 1) return 'You have no coins to bid with.'; }
+    if (side === 'buy' && g !== HOUSES && qty * limit > W.availCash(a))
+      return `Not enough free cash: that order needs ${(qty * limit / 100).toFixed(2)}, you have ${(Math.max(0, W.availCash(a)) / 100).toFixed(2)} free — bid at most that in total.`;
+    if (side === 'sell' && qty > W.sellable(a, g))
+      return `You only have ${Math.max(0, W.sellable(a, g))} ${GOODS[g]} free to sell${g === HOUSES && a.building ? ' (a house under construction can\'t be sold)' : ''}.`;
+    const seq = ++W.seq;
+    a.draft.push({ agent: a.id, side, good: g, qty, limit, seq });
+    emit('order', { agent: a.id, name: a.name, side, good: GOODS[g], qty, price: limit, seq, ...(reason ? { reason: String(reason).slice(0, 200) } : {}) });
+    return null;
+  };
+
+  // ---- the bank: requests queue for the next round, where the chain decides ------
+  // Interest accrues per slot on the principal (rateBps per ratePeriodSlots): the mirror
+  // holds the debt as last accrued on-chain, and debtNow() adds what has accrued since,
+  // at the chain's slot estimated from the last read.
+  W.nowSlot = () => W.slot + Math.max(0, Math.floor((Date.now() - W.slotAt) / CFG.SLOT_MS));
+  W.debtNow = (a, slot = W.nowSlot()) => accruedDebt(a, W.bank.terms, slot);
+  W.slotsPerMin = () => Math.round(60_000 / CFG.SLOT_MS);
+  // Kept for the dashboard: what the ledger's terms work out to per minute of real time.
+  // It is no longer the dial anyone sets — the rate is per ROUND now (CFG.BANK.RATE_PER_ROUND).
+  W.ratePerMin = () => W.bank.terms.rateBps / 10_000 * W.slotsPerMin() / W.bank.terms.ratePeriodSlots;
+  // What a loan costs to hold for one round: the rate the ledger was created with, scaled by
+  // how long a round is really taking against the round the terms were written for
+  // (CFG.ROUND_MS_EXPECTED). The chain can only count slots, so this is measured, not assumed
+  // — and it is what the villagers are shown, so the number they act on is the number charged.
+  W.ratePerRound = () => W.bank.terms.rateBps / 10_000 * W.slotsPerRound / W.bank.terms.ratePeriodSlots;
+  W.termRounds = () => CFG.BANK.TERM_ROUNDS;
+  W.termSlots = rounds => Math.min(65_535, Math.max(1, Math.floor(rounds * W.slotsPerRound * CFG.BANK.TERM_SLACK)));
+  // The mirror moves at once (so an agent can spend a loan in the same breath), and is
+  // replaced by what the chain actually did when the round settles.
+  const applyLoan = (a, op) => {
+    const now = W.nowSlot();
+    a.debt = W.debtNow(a, now); a.accruedSlot = now;      // what the chain does first: accrue to now
+    if (op.kind === 'borrow') {
+      // a new loan's clock starts now (the chain's own due slot replaces this when it settles);
+      // a top-up keeps its due slot
+      if (!a.debt) { a.dueSlot = now + op.termSlots; a.dueRound = op.dueRound; }
+      a.cash += op.amount; a.debt += op.amount; a.principal += op.amount;
+      op.collateral.forEach((q, g) => { a.goods[g] -= q; a.locked[g] += q; });
+    } else {
+      // interest first, then principal. The collateral stays locked here until the chain
+      // releases it: freeing it early let agents burn or sell goods the chain still held.
+      const paid = Math.min(op.amount, a.debt), interest = Math.min(paid, a.debt - a.principal);
+      a.cash -= paid; a.debt -= paid; a.principal -= paid - interest;
+      if (a.debt < FORGIVE_BELOW) { a.debt = 0; a.principal = 0; }
+    }
+  };
+  W.collateralValue = locked => locked.reduce((s, q, g) => s + q * W.prices[g], 0);
+  // What an agent could pledge right now. A house under construction is worth nothing and
+  // can't be sold, so the bank doesn't take one: only finished, unreserved houses count.
+  W.pledgeable = (a, g) => PLEDGEABLE[g] ? Math.max(0, g === HOUSES ? W.sellable(a, g) : W.availGood(a, g)) : 0;
+  W.freePledge = a => GOODS.map((_, g) => W.pledgeable(a, g));
+  // What the bank may still lend anyone: its capital caps all loans at equity / kappa
+  // (the chain's lendingCap, against debt as last accrued). Loans asked for but not yet on-chain count too.
+  W.bankCommitted = () => W.bank.debtTotal +
+    [...W.opsInflight, ...W.loanOps].filter(o => o.kind === 'borrow').reduce((s, o) => s + o.amount, 0);
+  W.bankRoom = () => Math.max(0, W.bank.lendingCap - W.bankCommitted());
+  // new coins the bank would lend on top of what's owed: the collateral limit, and the bank's
+  // capital. The debt is taken as it will be when the request lands: after the decisions, at settlement.
+  const SOON = () => Math.ceil((CFG.DECIDE_TIMEOUT_MS + 2000) / CFG.SLOT_MS);
+  // The loan-to-value in force. The ledger's own `ltvBps` is the hard ceiling, fixed for the
+  // life of the run and enforced by the program; the bank's policy today (CFG.BANK) may be
+  // tighter, and the control panel moves it mid-run. Tightening is off-chain, the limit is not.
+  W.ltvBps = () => Math.min(W.bank.terms.ltvBps, CFG.BANK.CREDIT ? Math.round(CFG.BANK.LTV * 10_000) : 0);
+  W.loanLimits = (a, extra = none()) => {
+    const value = W.collateralValue((a.debt > 0 ? a.locked : none()).map((q, g) => q + extra[g]));
+    const owed = a.debt ? W.debtNow(a, W.nowSlot() + SOON()) : 0;
+    return { collateral: Math.max(0, Math.floor(value * W.ltvBps() / 10_000) - owed), bank: W.bankRoom() };
+  };
+  W.maxLoan = (a, extra) => { const l = W.loanLimits(a, extra); return Math.min(l.collateral, l.bank); };
+  W.requestBorrow = (a, amount, collateral) => {
+    amount = Math.round(amount);
+    const termRounds = W.termRounds();
+    if (amount < 1) return 'Borrow a positive amount.';
+    if (!W.ltvBps()) return 'The bank is not lending: credit is switched off.';
+    if (a.debt && (W.nowSlot() > a.dueSlot || (a.dueRound && W.round + 1 >= a.dueRound)))
+      return 'Your loan is due: it can\'t be topped up, only repaid or collected.';
+    if (collateral.some((q, g) => q && !PLEDGEABLE[g])) return `The bank does not take ${GOODS.filter((_, g) => collateral[g] && !PLEDGEABLE[g]).join(' or ')} as collateral${collateral[FOOD] ? ' (food rots)' : ''}.`;
+    for (let g = 0; g < GOODS.length; g++) if (collateral[g] > W.pledgeable(a, g))
+      return `You only have ${W.pledgeable(a, g)} ${GOODS[g]} free to pledge` +
+        (g === HOUSES && a.building ? ' (a house under construction can\'t be pledged).' : '.');
+    const lim = W.loanLimits(a, collateral);
+    if (amount > lim.collateral) return `Not enough collateral: that pledge lets you borrow at most ${(lim.collateral / 100).toFixed(2)}.`;
+    if (amount > lim.bank) return `The bank cannot lend that much: its capital (${(W.bank.equity / 100).toFixed(2)}) lets it lend ` +
+      `at most ${(W.bank.lendingCap / 100).toFixed(2)} in all, and ${(W.bankCommitted() / 100).toFixed(2)} is already owed or requested. ` +
+      `It can lend you at most ${(lim.bank / 100).toFixed(2)} right now.`;
+    // a top-up keeps its due slot on-chain, whatever term is sent; send the shortest
+    const op = { kind: 'borrow', agent: a.id, amount, termSlots: a.debt ? 1 : W.termSlots(termRounds), collateral,
+                 topUp: !!a.debt, ...(a.debt ? {} : { termRounds, dueRound: W.round + 1 + termRounds }) };
+    W.loanOps.push(op); applyLoan(a, op);
+    emit('borrow', { agent: a.id, name: a.name, amount, term: op.topUp ? null : termRounds, termSlots: op.termSlots, collateral });
+    return null;
+  };
+  W.requestRepay = (a, amount) => {
+    const owed = W.debtNow(a);
+    if (!a.debt) return 'You have no loan to repay.';
+    const paid = Math.min(Math.round(amount), owed, W.availCash(a));
+    if (paid < 1) return 'You have no free cash to repay with.';
+    // repaying "everything" pays what will have accrued by the time it lands, if the cash allows
+    const all = paid >= owed ? Math.min(W.availCash(a), W.debtNow(a, W.nowSlot() + SOON())) : paid;
+    const op = { kind: 'repay', agent: a.id, amount: all };
+    W.loanOps.push(op); applyLoan(a, op);
+    emit('repay', { agent: a.id, name: a.name, amount: all });
+    return null;
+  };
+  // Rounds left before the loan is collected, counting the coming one (0 = overdue).
+  W.roundsUntilDue = a => a.debt && a.dueRound ? Math.max(0, a.dueRound - W.round) : null;
+
+  // ---- a round's work, meals, fires and rot ----------------------------------------
+  // One round's work: the shift the agent chose.
+  function finish(a) {
+    const { task } = a.activity;
+    const T = CFG.TASKS[task];
+    const made = a.madeRound = none();   // what this shift brings in, for the stall's repricing
+    if (task === 'gather_food') {
+      // a pledged net fishes too; only a free one can tear (the chain holds the pledged one)
+      const hasNet = W.usableNets(a) > 0, atRisk = Math.max(0, W.availGood(a, NETS));
+      const got = roll((hasNet ? T.netYield : T.yield) * W.skill(a, task) * W.catch());
+      W.made[FOOD] += got; made[FOOD] += got; addDelta(a, FOOD, got);
+      if (hasNet && atRisk > 0 && rnd() < CFG.NET_WEAR) { addDelta(a, NETS, -1); remember(a, 'One of your nets tore and is gone.'); }
+      remember(a, `You caught ${got} food${hasNet ? ' using your net' : ''}.`);
+    } else if (task === 'gather_wood') {
+      const got = roll(T.yield * W.skill(a, task));
+      addDelta(a, WOOD, got); W.made[WOOD] += got; made[WOOD] += got;
+      remember(a, `You cut ${got} wood.`);
+    } else if (task === 'craft_net') {
+      addDelta(a, NETS, 1); W.made[NETS]++; made[NETS]++;   // its wood went in when the shift began
+      remember(a, 'You finished crafting a net.');
+    } else if (task === 'smoke_fish') {
+      const got = W.smokePieces(a);                         // its food and wood went in when the shift began
+      addDelta(a, SMOKED, got); W.made[SMOKED] += got; made[SMOKED] += got;
+      remember(a, `You smoked ${got} smoked fish.`);
+    } else if (task === 'build_house') {
+      // the house may have been seized or sold (as unfinished it can't be) since the shift began
+      // the shift's wood was taken when it began
+      if (a.building) {
+        a.building.done += W.buildSkill(a); a.building.shifts++;
+        if (a.building.done >= BUILD() - 1e-9) {
+          const shifts = a.building.shifts;
+          a.building = null; a.housesBuilt++; W.housesBuilt++; W.made[HOUSES]++; made[HOUSES]++;
+          remember(a, `You finished building a house. You now own ${W.houses(a)}.`);
+          emit('house_built', { agent: a.id, name: a.name, shifts });
+        } else remember(a, `You worked on your house: ${W.buildShiftsLeft(a)} more building shift${W.buildShiftsLeft(a) === 1 ? '' : 's'} to go.`);
+      }
+    }
+    a.shifts[task] = (a.shifts[task] ?? 0) + 1;
+    W.shiftsNow[task === 'idle' ? 'idle' : 'worked']++;
+    // Learning by doing: a shift worked makes the agent a little better at that job, up to
+    // LEARN_CAP times the skill it was born with. Building and smoking are crafting work, not
+    // skills of their own: they train craft_net.
+    const learn = task === 'build_house' || task === 'smoke_fish' ? 'craft_net' : task;
+    if (CFG.LEARN && a.skills[learn] != null) {
+      a.skills0 ??= { ...a.skills };
+      a.skills[learn] = Math.min(a.skills0[learn] * CFG.LEARN_CAP, a.skills[learn] * (1 + CFG.LEARN));
+    }
+  }
+
+  // A meal: eat what the lifestyle calls for, or whatever there is, and count the meal
+  // period's wellbeing — the food, the fire, the houses. Part of a helping counts in
+  // proportion (wellbeing is read off WB.EAT along a straight line between whole helpings):
+  // when meals had to be whole, 70% of hungry agent-rounds had 1-4 food in the larder and
+  // got nothing for it. Less than one full helping still counts as going hungry. Food
+  // committed to a sale is eaten too (the agent's asks shrink): asking high doesn't keep
+  // food from the table.
+  function eat(a) {
+    const WB = CFG.WELLBEING;
+    const ate = Math.max(0, Math.min(a.lifestyle * CFG.MEAL, a.goods[FOOD]));
+    const n = ate / CFG.MEAL, lo = Math.floor(n), hi = Math.ceil(n);
+    if (ate) addDelta(a, FOOD, -ate);
+    a.ateRound = n; W.used.eaten += ate;
+    if (n >= 1) a.hunger = 0;
+    else { a.hunger++; if (a.hunger === 1 || a.hunger % 3 === 0) remember(a, `You went hungry (${a.hunger} meal${a.hunger > 1 ? 's' : ''} short of a full helping).`); }
+    credit(a, 'eating', WB.EAT[lo] + (n - lo) * (WB.EAT[hi] - WB.EAT[lo]));
+    credit(a, 'warmth', a.cold ? WB.COLD : WB.WARM);
+    // Smoked fish: one piece a round, if there is one, on top of the helpings — a piece listed
+    // for sale is eaten like any other (the ask shrinks). It is no substitute for the meal above.
+    if (a.goods[SMOKED] >= 1) { addDelta(a, SMOKED, -1); W.used.smokedEaten++; credit(a, 'smoked', WB.SMOKED); }
+    // Upkeep: every house owned wants HOUSE_UPKEEP wood a round. Unpaid, it still stands —
+    // it just pays nothing this round. The fire comes first: warmth is worth more than a
+    // spare house, so upkeep only spends wood beyond one fire's worth.
+    const own = W.houses(a);
+    const spare = Math.max(0, a.goods[WOOD] - CFG.FIRE_WOOD);
+    a.upkeepPaid = Math.min(own, Math.floor(spare / CFG.HOUSE_UPKEEP));
+    if (a.upkeepPaid) { addDelta(a, WOOD, -a.upkeepPaid * CFG.HOUSE_UPKEEP); W.used.upkeep += a.upkeepPaid * CFG.HOUSE_UPKEEP; }
+    if (a.upkeepPaid < own && !a.neglect) remember(a, `You had no wood for the upkeep of ${own - a.upkeepPaid} of your ${own} house${own > 1 ? 's' : ''}: ` +
+      `${own - a.upkeepPaid === 1 ? 'it gave' : 'they gave'} you nothing this round.`);
+    a.neglect = a.upkeepPaid < own;
+    credit(a, 'house', W.houseWB(a.upkeepPaid));
+    a.wbRecent.push({ tick: W.tick, ate: n, ...a.wbNow });
+    if (a.wbRecent.length > 6) a.wbRecent.shift();
+    a.wbNow = noWb();
+  }
+
+  // Wood's second use: a fire. Like food, it's used up, so wood always has buyers.
+  function warm(a) {
+    if (a.goods[WOOD] >= CFG.FIRE_WOOD) { addDelta(a, WOOD, -CFG.FIRE_WOOD); a.cold = 0; W.used.fires += CFG.FIRE_WOOD; }
+    else { a.cold++; if (a.cold === 1 || a.cold % 3 === 0) remember(a, `You had no wood for your fire and went cold (${a.cold} time${a.cold > 1 ? 's' : ''}).`); }
+  }
+
+  // Goods rot; coins don't. Goods committed to a sale rot too (pledged ones don't: the
+  // chain holds them), so an ask nobody takes is no shelter.
+  W.spoiled = none();
+  function spoil() {
+    for (const a of agents) for (let g = 0; g < GOODS.length; g++) {
+      // A house under construction is never taken: it is on-chain but is not a house yet,
+      // and losing it would leave the builder's `building` pointing at nothing. (Houses only
+      // spoil at all when the panel turns that dial up — a hurricane.)
+      const rate = CFG.SPOIL[g], free = g === HOUSES ? a.goods[g] - W.unfinished(a) : a.goods[g];
+      if (!rate || free <= 0) continue;
+      const n = roll(free * rate);
+      if (n > 0) {
+        addDelta(a, g, -n); W.spoiled[g] += n;
+        (a.rotted ??= none())[g] += n;           // shown once in the next observation, not in memory
+        if (g === FOOD) a.rotRound += n;         // this round's alone (logged)
+      }
+    }
+  }
+
+  // One round, after every agent has decided (or timed out): the shift each chose, a meal,
+  // fires, rot, then the market. Nothing else moves while it settles on-chain.
+  // decide: how the decisions went (the slowest answer is how long the round waited).
+  W.playRound = async (decide = null) => {
+    W.tick = W.round + 1;
+    const simAt = Date.now();
+    for (const a of agents) {
+      if (!a.activity) W.keepJob(a);
+      a.rotRound = 0;
+      finish(a);
+      eat(a);
+      if ((W.tick + a.warmPhase) % CFG.WARM_ROUNDS === 0) warm(a);
+    }
+    spoil();
+    W.simMs = Date.now() - simAt;      // the shifts, meals, fires and rot: pure JS, no chain
+    await W.runRound(decide);
+  };
+
+  // ---- a market round: settle deltas, loans, the keeper, one auction per good, read the chain back
+  // Whatever fails, the round ends (roundBusy is always released) and the next one starts from the chain.
+  W.runRound = async (decide = null) => {
+    if (W.roundBusy) { emit('round_skipped', {}); return; }
+    W.roundBusy = true;
+    try { await round(decide); }
+    catch (e) { emit('error', { message: e.message }); }
+    finally { W.opsInflight = []; W.roundBusy = false; }
+  };
+
+  // The clearing the chain does (lib.rs clear_auction), replayed: the walk, the price
+  // (the midpoint of the last matched bid and ask, rounded down), and each order's fill,
+  // filled greedily in the order sent. Orders: { qty, limit }, bids desc and asks asc.
+  W.replayClear = (bids, asks, last) => {
+    let i = 0, j = 0, br = bids[0]?.qty ?? 0, ar = asks[0]?.qty ?? 0, volume = 0, lb = 0, la = 0;
+    while (i < bids.length && j < asks.length && bids[i].limit >= asks[j].limit) {
+      const q = Math.min(br, ar);
+      volume += q; lb = bids[i].limit; la = asks[j].limit; br -= q; ar -= q;
+      if (!br && ++i < bids.length) br = bids[i].qty;
+      if (!ar && ++j < asks.length) ar = asks[j].qty;
+    }
+    const fill = side => { let rem = volume; return side.map(o => { const q = Math.min(o.qty, rem); rem -= q; return q; }); };
+    if (!volume) return { volume, price: last, bidFills: bids.map(() => 0), askFills: asks.map(() => 0) };
+    return { volume, price: Math.max(1, Math.floor((lb + la) / 2)), bidFills: fill(bids), askFills: fill(asks) };
+  };
+
+  // Last round's book before clearing, per good: the top levels each side, what's beyond them.
+  const LEVELS = 3;
+  const levels = side => {
+    const out = [];
+    for (const o of side) { if (out.at(-1)?.[0] === o.limit) out.at(-1)[1] += o.qty; else out.push([o.limit, o.qty]); }
+    return { top: out.slice(0, LEVELS), more: Math.max(0, out.length - LEVELS), count: out.length };
+  };
+
+  // The bank's sale of seized goods: from the higher of its anchor and the price before the
+  // seizure, 5% lower each round nothing sells, never below what it has them on its books at.
+  // It never re-anchors on its own prints. Returns the price it asks at, or null.
+  W.bankAsk = (g, held = W.bank.goods[g], book = W.bank.bankBook?.[g] ?? 0) => {
+    if (!held) return null;
+    const st = W.bankSale[g] ??= { anchor: W.prices[g], k: 0 };
+    const floor = Math.ceil(book / held);
+    return { price: Math.max(1, floor, Math.round(st.anchor * (1 - CFG.BANK_SALE_STEP * st.k))), floor, qty: held };
+  };
+
+  async function round(decide) {
+    const t0 = Date.now();
+    // Where a round's wall-clock actually goes, phase by phase (ms). Logged with the round
+    // and shown in /state, so a slow round can be read off instead of guessed at.
+    // `sim` is the shifts, meals, fires and rot that ran just before this; `emitPrev` is what
+    // building the LAST round's event, writing it to the run log and pushing it to every
+    // dashboard cost — this round's own emit hasn't happened yet when the event is built.
+    const phase = { sim: W.simMs ?? 0, emitPrev: W.emitMs ?? 0 };
+    let pt = t0;
+    const mark = k => { const n = Date.now(); phase[k] = (phase[k] ?? 0) + (n - pt); pt = n; };
+    const batch = W.pending; W.pending = [];
+    // the book: the orders every agent posted this round
+    const book = GOODS.map((_, g) => agents.flatMap(a => a.orders.filter(o => o.good === g)));
+    const live = agents.filter(a => a.orders.length).length;
+    for (const o of book.flat()) { o.sentQty = 0; o.filled = 0; }
+    const ops = W.loanOps; W.loanOps = []; W.opsInflight = ops;
+    const made = W.made, shifts = W.shiftsNow, used = W.used;
+    W.made = none(); W.shiftsNow = { worked: 0, idle: 0 }; W.used = noUse();
+    // Every transaction this round, with what it did. The label is written where the
+    // call is made — nothing downstream has to guess which signature is which.
+    const sigs = [], overdueLoans = [];
+    const tx = (what, sig, extra = {}) => { if (sig) sigs.push({ sig, what, ...extra }); return sig; };
+    const cents = c => (c / 100).toFixed(2);
+    let settled = batch.length ? null : none();   // net goods settled per good (null if the settle failed)
+    // On-chain balances right before the auctions: every change after them is a fill. Stays
+    // null if the round fails before the auctions, and then no fills are reported.
+    let base = null, bankGoods = null;
+    let dividend = 0;                             // cents the bank paid EACH villager this round
+
+    // askQty/bidQty: what villagers offered and wanted; bankQty: the bank's foreclosure
+    // sale (set below); sold: units that changed hands (set after the round)
+    const bookStats = GOODS.map((_, g) => {
+      const b = book[g].filter(o => o.side === 'buy'), s = book[g].filter(o => o.side === 'sell');
+      return { bids: b.length, bidQty: b.reduce((t, o) => t + o.qty, 0), asks: s.length, askQty: s.reduce((t, o) => t + o.qty, 0),
+               bestBid: Math.max(0, ...b.map(o => o.limit)), bestAsk: s.length ? Math.min(...s.map(o => o.limit)) : null,
+               bankQty: 0, bankPrice: null, sold: 0 };
+    });
+    // what went to each good's auction, and how it went (for the ladder, fills and remainders)
+    const sent = GOODS.map(() => ({ bids: [], asks: [], ok: false, last: 0 }));
+    const spoiled = W.spoiled; W.spoiled = none();
+
+    try {
+      // Should never fail: the mirror never shows more than the chain holds. If it does,
+      // this round's goods changes are lost, but loans, the keeper and the auction go on.
+      if (batch.length) {
+        try {
+          // One net line per agent and good. The chain applies signed deltas, so a catch and
+          // the rot that follows it are the same line: fewer lines, fewer transactions, and
+          // the same balances at the end. It can only make the "no balance goes negative"
+          // check easier to pass, never harder — and it leaves the order the chunks land in
+          // with nothing to decide, which is what lets chain.settle send them together.
+          const net = new Map();
+          for (const d of batch) { const k = d.agent * GOODS.length + d.good; net.set(k, (net.get(k) ?? 0) + d.delta); }
+          const lines = [];
+          for (const [k, delta] of net) if (delta) lines.push({ agent: Math.floor(k / GOODS.length), good: k % GOODS.length, delta });
+          const parts = await chain.settle(lines);
+          parts.forEach((sig, i) => tx(`goods · ${lines.length} change${lines.length > 1 ? 's' : ''}${parts.length > 1 ? ` (${i + 1}/${parts.length})` : ''}`, sig, { kind: 'settle' }));
+          settled = none(); for (const d of batch) settled[d.good] += d.delta;
+        } catch (e) { emit('error', { message: `settle: ${e.message}` }); }
+      }
+      mark('settle');
+
+      // loans — each agent's in the order asked, agents in parallel. The program has the final say.
+      const byAgent = new Map();
+      for (const op of ops) byAgent.set(op.agent, [...(byAgent.get(op.agent) ?? []), op]);
+      const rate = `≈${+(W.ratePerRound() * 100).toFixed(2)}% a round`;
+      await Promise.all([...byAgent.values()].map(async list => { for (const op of list) {
+        const a = agents[op.agent];
+        try {
+          tx(op.kind === 'borrow' ? `${a.name} borrows ${cents(op.amount)}` : `${a.name} repays ${cents(op.amount)}`,
+             op.kind === 'borrow' ? await chain.borrow(op.agent, op.amount, op.termSlots, op.collateral) : await chain.repay(op.agent, op.amount),
+             { kind: op.kind, agent: op.agent });
+          op.ok = true;
+          if (op.kind === 'borrow' && !op.topUp) a.dueRound = op.dueRound;
+          remember(a, op.kind === 'repay' ? `You repaid ${(op.amount / 100).toFixed(2)} of your loan (interest first).`
+            : op.topUp ? `The bank added ${(op.amount / 100).toFixed(2)} new coins to your loan; it is due at the same round as before.`
+            : `The bank lent you ${(op.amount / 100).toFixed(2)} new coins for ${op.termRounds} rounds (due at the end of round ${op.dueRound}). ` +
+              `Interest: ${rate} on what you borrowed, charged for every round you hold it.`);
+        } catch (e) {
+          // the program's own reason, e.g. "the bank has reached its lending cap"
+          const why = e.message.match(/Error Message: (.*)/)?.[1] ?? e.message.replace(/^chain tx failed: /, '');
+          remember(a, `The bank refused your ${op.kind}: ${why.slice(0, 120)}`);
+        }
+      } }));
+      mark('loans');
+
+      // The bank calls `collect` on every loan past its due slot. The chain decides what
+      // happens: an overdue loan whose debtor has the cash is collected from it (no penalty);
+      // otherwise it's a foreclosure. `collect` still permits margin calls on-chain, but the
+      // bank never cites one: a falling price is not a reason to seize a villager's goods
+      // (see CFG.BANK.MARGIN).
+      let mid = await chain.fetch();
+      W.slot = mid.slot; W.slotAt = Date.now();
+      mark('read');
+      // An overdue loan is collected at the round it was promised for, not before: its
+      // on-chain deadline was set a little early (TERM_SLACK) so that it has passed by then.
+      await Promise.all(agents.map(async a => {
+        const s = mid.slots[a.id], reason = collectable(s, mid, mid.slot);
+        if (reason !== 'overdue' || (a.dueRound && W.round + 1 < a.dueRound)) return;
+        try {
+          const sig = await chain.collect(a.id);
+          tx(`the bank collects from ${a.name}`, sig, { kind: 'collect', agent: a.id });
+          overdueLoans.push({ agent: a.id, name: a.name, reason, before: s, sig });
+        } catch (e) { emit('error', { message: `collect ${a.name}: ${e.message}` }); }
+      }));
+      const collectSlot = mid.slot;
+      mark('keeper');
+      if (overdueLoans.length || ops.length) { mid = await chain.fetch(); mark('read'); }
+      // What each call actually did, read off the chain.
+      for (const f of overdueLoans) {
+        const b = f.before, s = mid.slots[f.agent], a = agents[f.agent], T = mid.terms;
+        f.returned = s.goods.map((q, g) => q - b.goods[g]);
+        f.seized = b.locked.map((q, g) => q - f.returned[g]);
+        // A collection takes exactly the debt accrued to the slot it landed at, and nothing else.
+        const owedAt = t => accruedDebt(b, T, t);
+        let landed = null;
+        if (f.reason === 'overdue') for (let t = collectSlot; t <= mid.slot && landed === null; t++)
+          if (b.cash - owedAt(t) === s.cash) landed = t;
+        const debt = owedAt(landed ?? mid.slot);
+        f.debt = debt;
+        if (landed !== null) {
+          f.kind = 'collected'; f.taken = debt; f.interest = debt - b.principal;
+          W.autoRepaid++;
+          const back = list(f.returned);
+          remember(a, `Your loan came due and the bank collected it from your cash: ${(debt / 100).toFixed(2)} ` +
+            `(${(f.interest / 100).toFixed(2)} of it interest). No penalty${back ? `; your pledged ${back} ${f.returned.reduce((x, y) => x + y, 0) === 1 ? 'is' : 'are'} free again` : ''}.`);
+        } else {
+          // cash first; goods are seized only when it fell short, and then all of it was taken
+          // and whatever the debtor holds now is the refund
+          const seizedAny = f.seized.some(q => q > 0);
+          f.kind = 'foreclosed';
+          f.refund = seizedAny ? s.cash : 0;
+          f.taken = b.cash - s.cash + f.refund;
+          const penalty = Math.floor(debt * T.penaltyBps / 10_000);
+          f.writtenOff = Math.max(0, b.principal - Math.max(0, f.taken - (debt - b.principal + penalty)));
+          W.overdue++;
+          const why = `FORECLOSED: your loan of ${(debt / 100).toFixed(2)} was overdue and your cash could not cover it.`;
+          const seized = list(f.seized), back = list(f.returned);
+          // the bank's sale of what it seized starts again from the price before the seizure
+          f.seized.forEach((q, g) => { if (q > 0) W.bankSale[g] = { anchor: Math.max(W.bankSale[g]?.anchor ?? 0, W.prices[g]), k: 0 }; });
+          remember(a, `${why} ${(f.taken / 100).toFixed(2)} of your coins went to the debt plus a ${T.penaltyBps / 100}% penalty` +
+            (seized ? `; the bank seized ${seized}, valued at ${FIRE_SALE_BPS / 100}% of the last price` : '') +
+            (f.refund ? `, and refunded you ${(f.refund / 100).toFixed(2)} (what that was worth beyond what you owed)` : '') +
+            (back ? `; ${back} came back to you` : '') + '.');
+          // a seized house is the unfinished one first (see W.sellable)
+          if (a.building && f.seized[HOUSES] && b.locked[HOUSES] - f.seized[HOUSES] < W.unfinished(a)) {
+            a.building = null;
+            remember(a, 'The bank took your unfinished house, so that build is over.');
+          }
+        }
+        delete f.before;
+      }
+      // The dividend. Interest and penalties are coins that leave the villagers' purses for the
+      // bank's capital; left there they are out of circulation for good, and the village's
+      // money drains away a little every round. The program pays half the bank's equity above
+      // its capital requirement to every villager equally (lib.rs pay_dividend, open to anyone:
+      // the keeper signs it, not the authority). It is a no-op on-chain without a surplus, so it
+      // is only sent when the books just read say there is at least a cent each to pay. After
+      // the keeper, whose collections are read off `mid` above; before the auctions, so the
+      // coins can be bid with this round. What was paid is read back off the chain, not assumed.
+      if (dividendPerAgent(mid) > 0) {
+        try {
+          const paidBefore = mid.books.dividendsPaid;
+          const sig = await chain.payDividend();
+          mid = await chain.fetch();
+          dividend = Math.floor((mid.books.dividendsPaid - paidBefore) / Math.max(1, mid.numAgents));
+          if (dividend > 0) {
+            tx(`the bank pays a dividend · ${cents(dividend)} to each villager`, sig, { kind: 'dividend', amount: dividend });
+            for (const a of agents) {
+              unsettledPurses.add(a.id);                 // the coins themselves move in settle_cash below
+              if (dividend >= 50) remember(a, `The bank paid a dividend of ${cents(dividend)} coins to every villager.`);
+            }
+          }
+        } catch (e) { dividend = 0; emit('error', { message: `dividend: ${e.message}` }); }
+        mark('dividend');
+      }
+      const txs = [];
+      base = mid.slots.map(x => ({ cash: x.cash, goods: [...x.goods] }));
+      bankGoods = [...mid.bank.goods];
+
+      // One good's auction. The bank's own ask is the one order in a book that can make the
+      // whole transaction fail on something other than the market: a fire sale that pays down
+      // `bad_debt` has to burn coins, and those coins are in the buyers' purses, not in the
+      // vault the burn reads — so with bad debt outstanding the SPL burn can come back
+      // "insufficient funds" (0x1) and take the villagers' market down with it. If that
+      // happens, send the same book again without the bank's ask: the village still trades,
+      // and the bank simply keeps the goods and marks them down again next round.
+      const clearGood = async (g, bids, asks) => {
+        try {
+          const sig = await chain.clear(g, bids, asks);
+          sent[g].ok = true;
+          return { sig, g };
+        } catch (e) {
+          const own = asks.filter(o => o.agent !== BANK);
+          if (own.length === asks.length || !own.length) throw e;
+          const sig = await chain.clear(g, bids, own);
+          Object.assign(sent[g], { asks: own, ok: true });
+          bookStats[g].bankQty = 0; bookStats[g].bankPrice = null;
+          emit('error', { message: `${GOODS[g]} auction: the bank's fire sale could not settle, so it was left out of the clear` });
+          return { sig, g };
+        }
+      };
+
+      const cashLeft = base.map(e => e.cash);
+      const goodsLeft = base.map(e => [...e.goods]);
+      for (let g = 0; g < GOODS.length; g++) {
+        // price-time priority: better price first, then the older order (never the agent's index)
+        let asks = book[g].filter(o => o.side === 'sell').sort((x, y) => x.limit - y.limit || x.seq - y.seq);
+        // the bank sells seized collateral, queued last at its price
+        const bank = W.bankAsk(g, bankGoods[g], mid.bankBook[g]);
+        if (bank) {
+          bookStats[g].bankQty = bank.qty; bookStats[g].bankPrice = bank.price;
+          asks.push({ agent: BANK, side: 'sell', good: g, qty: bank.qty, limit: bank.price, seq: Infinity });
+          asks.sort((x, y) => x.limit - y.limit || x.seq - y.seq);
+        }
+        let bids = book[g].filter(o => o.side === 'buy').sort((x, y) => y.limit - x.limit || x.seq - y.seq);
+        // one atomic transaction per good: trim to what fits first, so trimmed orders hold no cash or goods
+        while (bids.length + asks.length > chain.MAX_ORDERS_PER_TX) (bids.length > asks.length ? bids : asks).pop();
+        // then check against on-chain balances, so the auction can never revert
+        const take = (o, q, limit = o.limit) => ({ agent: o.agent, qty: q, limit, seq: o.seq, src: o });
+        asks = asks.map(o => take(o, o.agent === BANK ? o.qty : Math.min(o.qty, goodsLeft[o.agent][g])))
+          .filter(o => { if (o.qty < 1) return false; if (o.agent !== BANK) goodsLeft[o.agent][g] -= o.qty; return true; });
+        // A house bid holds no cash back while food and wood clear (W.reservedCash): houses clear
+        // last, on whatever cash is left. So it goes at the lower of its limit and that cash, not
+        // at floor(cash / limit) units — which is 0 the moment any earlier bid has reserved a
+        // coin, and dropped 627 of 901 house bids in a 100-round run before the auction saw
+        // them: builders were shown a third of their buyers. Everything after this — the
+        // replay, the ladder, the fill lines — reads the limit that was sent (o.src.sentLimit).
+        bids = bids.map(o => { const cash = cashLeft[o.agent];
+            return g === HOUSES && cash >= 1 && cash < o.limit ? take(o, 1, cash) : take(o, Math.min(o.qty, Math.floor(cash / o.limit))); })
+          .filter(o => { if (o.qty < 1) return false; cashLeft[o.agent] -= o.qty * o.limit; return true; });
+        if (g === HOUSES) bids.sort((x, y) => y.limit - x.limit || x.seq - y.seq);   // a lowered limit moves down the book; the chain wants bids descending
+        Object.assign(sent[g], { bids, asks, last: mid.lastPrice[g] });
+        if (bids.length && asks.length) txs.push(clearGood(g, bids, asks));
+      }
+      // Cash and goods were split between goods above, so the auctions can't conflict: send
+      // them together instead of waiting on each confirmation in turn.
+      for (const r of await Promise.allSettled(txs)) {
+        if (r.status === 'fulfilled') {
+          if (r.value?.sig) tx(`${GOODS[r.value.g]} auction`, r.value.sig, { kind: 'auction', good: r.value.g });
+        } else emit('error', { message: r.reason?.message ?? String(r.reason) });
+      }
+      mark('auctions');
+    } catch (e) {
+      emit('error', { message: e.message });
+    }
+
+    // the chain is the truth — replace the mirror
+    const L = await chain.fetch();
+    mark('read');
+    // Now move the coins themselves. Cash changed on-chain above; these are the SPL
+    // transfers that make an agent's purse hold what the books say they have — buyers
+    // paying sellers directly, the bank paying out a loan or a dividend.
+    // Compared against what the purses actually hold, not against `base`: `base` is read
+    // AFTER the loans and the keeper, so a villager who borrowed or repaid but did not trade
+    // looked unchanged and their purse was left stale until they next traded — the headless
+    // summary's "every agent purse = that agent's cash" check would then fail.
+    for (const a of agents) {
+      if (purseCash[a.id] !== L.slots[a.id].cash) unsettledPurses.add(a.id);
+    }
+    // A repayment or a foreclosure burns the debtor's own coins and takes them straight out
+    // of that purse (chain.mjs, lib.rs fund_burn), so the purse moved even in the rare case
+    // where the ledger cash came back to where it started (a foreclosure refund exactly
+    // matching what was collected). Name them regardless: settle_cash on a purse that
+    // already matches moves nothing, so this costs at most one more agent in a chunk.
+    for (const o of ops) unsettledPurses.add(o.agent);
+    for (const f of overdueLoans) unsettledPurses.add(f.agent);
+    // what the SETTLERS mint itself says exists. The program checks this against the
+    // books inside every instruction that can move it, so this is a read, not a guard —
+    // and moving coins between purses can't change it, so it is read alongside them.
+    const supplyRead = chain.settlersSupply();
+    if (unsettledPurses.size) {
+      try {
+        const paid = [...unsettledPurses];
+        const sigs2 = await chain.settleCash(paid, id => L.slots[id].cash);
+        // Read the transfers back off the transactions rather than restating them: this is
+        // what the chain says happened, and it is what the dashboard shows. One read per
+        // transaction, all at once — they don't depend on each other.
+        const moveLists = await Promise.all(sigs2.map(sig =>
+          chain.transfersIn(sig).catch(() => [])));   // the label survives without them
+        sigs2.forEach((sig, i) => {
+          const moves = moveLists[i];
+          const name = i2 => i2 === 'the bank' ? 'the bank' : (agents[i2]?.name ?? `agent ${i2}`);
+          tx(moves.length ? `coins move · ${moves.length} payment${moves.length > 1 ? 's' : ''}`
+                          : `purses · ${paid.length} settled`, sig,
+             { kind: 'purses', moves: moves.map(m => ({ from: name(m.from), to: name(m.to), amount: m.amount,
+               // ids too, for the dashboard's swarm graph: an agent's index, or -1 for the bank
+               fromId: typeof m.from === 'number' ? m.from : -1, toId: typeof m.to === 'number' ? m.to : -1 })) });
+        });
+        unsettledPurses.clear();
+        purseCash = L.slots.map(s => s.cash);
+      } catch (e) {
+        // The books are still right and the purses catch up next round: say so, don't stop.
+        // purseCash is left as it was, so next round asks for everyone who still differs —
+        // settle_cash on a purse that already matches moves nothing.
+        emit('error', { message: `purses not settled this round: ${e.message}` });
+      }
+    }
+    W.settlersSupply = await supplyRead;
+    mark('purses');
+    W.slot = L.slot; W.slotAt = Date.now();
+    const fills = none(), trades = [], dgs = [];
+    if (base) for (let g = 0; g < GOODS.length; g++) fills[g] += Math.max(0, bankGoods[g] - L.bank.goods[g]);   // foreclosure sales
+    for (const a of agents) {
+      const after = L.slots[a.id];
+      dgs[a.id] = base ? GOODS.map((_, g) => after.goods[g] - base[a.id].goods[g]) : none();
+      for (let g = 0; g < GOODS.length; g++) {
+        const dg = dgs[a.id][g];
+        const at = (L.lastPrice[g] / 100).toFixed(2);
+        if (dg > 0) { remember(a, `Market: you bought ${dg} ${GOODS[g]} at ${(L.lastPrice[g] / 100).toFixed(2)}.`); trades.push({ agent: a.id, good: GOODS[g], side: 'buy', qty: dg, price: L.lastPrice[g] }); }
+        if (dg < 0) { remember(a, `Market: you sold ${-dg} ${GOODS[g]} at ${(L.lastPrice[g] / 100).toFixed(2)}.`); fills[g] += -dg; trades.push({ agent: a.id, good: GOODS[g], side: 'sell', qty: -dg, price: L.lastPrice[g] }); }
+      }
+    }
+    for (let g = 0; g < GOODS.length; g++) bookStats[g].sold = fills[g];
+
+    // Replay each good's clearing to know every order's fill (the chain reports only balances),
+    // and check it against what the chain did.
+    const got = agents.map(() => none()), ladder = [], orderLog = [], noBankPrice = none().map(() => null);
+    for (let g = 0; g < GOODS.length; g++) {
+      const S = sent[g], r = W.replayClear(S.ok ? S.bids : [], S.ok ? S.asks : [], S.last);
+      if (S.ok && r.price !== L.lastPrice[g]) emit('error', { message: `replayed ${GOODS[g]} price ${r.price} but the chain printed ${L.lastPrice[g]}` });
+      for (const [side, fl, sign] of [[S.bids, r.bidFills, 1], [S.asks, r.askFills, -1]]) side.forEach((o, k) => {
+        o.filled = fl[k] ?? 0;
+        if (o.agent !== BANK) { Object.assign(o.src, { sentQty: o.qty, sentLimit: o.limit, filled: o.filled }); got[o.agent][g] += sign * o.filled; }
+        orderLog.push({ g, side: sign > 0 ? 'buy' : 'sell', agent: o.agent === BANK ? 'bank' : o.agent, qty: o.qty, limit: o.limit,
+                        seq: Number.isFinite(o.seq) ? o.seq : null, filled: o.filled,
+                        src: o.agent === BANK ? 'bank' : o.src.stall ? 'stall' : o.src.shop ? 'list' : 'own' });
+      });
+      // the D5 check: what the same book would have printed without the bank's sale
+      if (bookStats[g].bankQty && S.ok) { const nb = W.replayClear(S.bids, S.asks.filter(o => o.agent !== BANK), S.last); noBankPrice[g] = nb.volume ? nb.price : null; }
+      const qty = xs => xs.reduce((t, o) => t + o.qty, 0);
+      ladder[g] = { asks: levels(S.asks), bids: levels(S.bids), price: L.lastPrice[g], sold: fills[g], offered: qty(S.asks), wanted: qty(S.bids) };
+      // the bank's sale: nothing sold → 5% lower next round; some sold → same price; sold out → over
+      if (base && bankGoods[g]) {
+        if (!L.bank.goods[g]) delete W.bankSale[g];
+        else if (bankGoods[g] === L.bank.goods[g] && W.bankSale[g]) W.bankSale[g].k++;
+      }
+    }
+    if (base) for (const a of agents) for (let g = 0; g < GOODS.length; g++) if (got[a.id][g] !== dgs[a.id][g])
+      emit('error', { message: `replayed fills for ${a.name} ${GOODS[g]}: ${got[a.id][g]}, chain: ${dgs[a.id][g]}` });
+    W.lastLadder = ladder;
+
+    for (const a of agents) {
+      const after = L.slots[a.id];
+      // How each of the agent's orders did. Then they expire: nothing stands into the next round.
+      const lines = a.orders.map(o => {
+        const n = GOODS[o.good], sell = o.side === 'sell', l = ladder[o.good];
+        const head = `your ${o.stall ? 'stall\'s ' : o.shop ? 'shopping list\'s ' : ''}${o.qty} ${n} ${sell ? 'ask' : 'bid'} at ${(o.limit / 100).toFixed(2)}`;
+        if (!o.sentQty) return `${head}: not sent — you no longer had the ${sell ? n : 'cash'}.`;
+        const cut = o.sentLimit < o.limit ? `sent at ${(o.sentLimit / 100).toFixed(2)}, the cash your other bids left you, ` : '';
+        return `${head}: ${o.sentQty < o.qty ? `only ${o.sentQty} sent, ` : ''}${cut}${o.filled} ${sell ? 'sold' : 'bought'}` +
+          (o.filled ? ` at ${(l.price / 100).toFixed(2)}.` : ` — ${l.offered} were offered, ${l.wanted} wanted.`);
+      });
+      // Repricing by habit: a stall that sold nothing marks down, one that sold out marks up; a
+      // shopping list that got nothing bids more, one that got everything eases toward the price
+      // it just paid.
+      // "Sold out" for a stall is: everything it sent, OR at least what the agent made of that
+      // good this round. A stall lists its whole stock above the reserve, so a producer carrying
+      // any backlog never sold "everything" however strong demand was, and its ask could only
+      // ever hold or fall. Selling a round's output in a round is selling out: the stock is not
+      // growing. (An agent that made none of the good this round keeps the old rule.)
+      // A filled bid never eases below the clearing price. It used to shave REPRICE.up/2 every
+      // round it was filled, even when it was already the marginal bid: every list did the same,
+      // the midpoint followed them, and the whole market walked down with no surplus behind it.
+      const R = CFG.REPRICE, clamp = (x, lo, hi) => Math.round(Math.min(hi, Math.max(lo, x)));
+      a.stallLast = GOODS.map(() => null);
+      for (const o of a.orders) {
+        if (o.stall) a.stallLast[o.good] = { offered: o.qty, sold: o.filled ?? 0 };   // shown next turn (tools.mjs describe)
+        if (!o.sentQty) continue;
+        const made = a.madeRound?.[o.good] ?? 0, paid = ladder[o.good].price;
+        const none = !o.filled, all = o.filled >= o.sentQty, soldOut = all || (made > 0 && o.filled >= made);
+        // ...but a stall prices off the going rate, not off its own last sticker: it may lead the
+        // last traded price by REPRICE.band and no more. Compounding from its own quote, every
+        // stall in a shortage marks up together round after round and the price runs away from
+        // what the good is worth (see CFG.REPRICE). The shopping list needs no such leash: its
+        // own `max` is the ceiling. Its floor when filled is only the price it was just filled
+        // at, which is at or below its own bid — so it can stop a bid falling, never raise one.
+        // The floor and the ceiling follow the going price (STALL.min, SHOP.max × the last print), not
+        // the opening one: nobody can rewrite these habits any more, and a list capped at 2.5× the
+        // OPENING food price stopped bidding altogether when a bad season took food to 4.73 — a
+        // third of the village went hungry with coins in hand.
+        { const p = L.lastPrice[o.good], sl = a.sale[o.good], sh = a.shop[o.good];
+          if (sl && CFG.STALL[o.good]) sl.min = Math.max(1, Math.round(p * CFG.STALL[o.good].min));
+          if (sh && CFG.SHOP[o.good]) sh.max = Math.max(1, Math.round(p * CFG.SHOP[o.good].max)); }
+        const cap = Math.max(1, Math.round(W.prices[o.good] * R.band));
+        if (o.stall && a.sale[o.good]) { const pl = a.sale[o.good]; pl.ask = clamp(pl.ask * (none ? 1 - R.down : soldOut ? 1 + R.up : 1), pl.min, Math.max(pl.min, cap)); }
+        if (o.shop && a.shop[o.good]) { const pl = a.shop[o.good]; pl.bid = clamp(none ? pl.bid * (1 + R.down) : all ? Math.max(paid, pl.bid * (1 - R.up / 2)) : pl.bid, 1, pl.max); }
+      }
+      a.fills = lines.length ? { round: W.round + 1, lines } : null;
+      // hungryWhy (logged): why a villager who missed this round's meal had no food for it. The
+      // meal is eaten before the market clears, so the market that could have fed it was LAST
+      // round's; the rule reads the villager's food bids there (a.foodMkt, kept from then), in order:
+      //   no bid sent     → 'no cash' if its cash then was under one food at its list's bid, else 'no bid'
+      //                     (a bid posted but trimmed away entirely counts as 'bid unfilled' when it had cash)
+      //   nothing offered → 'no asks'
+      //   filled short    → 'bid unfilled'
+      //   filled in full  → 'no cash' if cash had trimmed the bid, else 'bid too small'
+      // Best effort: it does not see food rotted, sold or eaten at a higher lifestyle in between.
+      const fm = a.foodMkt;
+      a.hungryWhy = !a.hunger ? null : !fm?.want ? (fm?.broke ? 'no cash' : 'no bid') : !fm.sent ? (fm.broke ? 'no cash' : 'bid unfilled')
+        : !fm.offered ? 'no asks' : fm.got < fm.sent ? 'bid unfilled' : fm.sent < fm.want ? 'no cash' : 'bid too small';
+      const fb = a.orders.filter(o => o.good === FOOD && o.side === 'buy'), tot = k => fb.reduce((t, o) => t + (o[k] ?? 0), 0);
+      a.foodMkt = { want: tot('qty'), sent: tot('sentQty'), got: tot('filled'), offered: ladder[FOOD].offered,
+                    broke: (base?.[a.id].cash ?? a.cash) < (a.shop[FOOD]?.bid ?? W.prices[FOOD]) };
+      a.orders = [];
+      a.chain = { cash: after.cash, goods: [...after.goods] };
+      a.cash = after.cash;
+      a.goods = [...after.goods];
+      a.locked = [...after.locked]; a.debt = after.debt; a.principal = after.principal;
+      a.dueSlot = after.dueSlot; a.accruedSlot = after.accruedSlot;
+      if (!after.debt) a.dueRound = null;
+    }
+    // re-apply what arrived mid-round
+    for (const d of W.pending) agents[d.agent].goods[d.good] += d.delta;
+    for (const op of W.loanOps) applyLoan(agents[op.agent], op);
+    // a build whose house is gone (its start never settled) is over
+    for (const a of agents) if (a.building && W.owned(a, HOUSES) < 1) {
+      a.building = null; remember(a, 'Your unfinished house is gone, so that build is over.');
+    }
+    for (const o of ops) W.bankLog.push({ round: W.round + 1, kind: o.kind, name: agents[o.agent].name, amount: o.amount, ok: !!o.ok,
+      ...(o.kind === 'borrow' ? { term: o.topUp ? null : o.termRounds } : {}) });
+    for (const f of overdueLoans) W.bankLog.push({ round: W.round + 1, kind: f.kind, reason: f.reason, name: f.name,
+      amount: f.taken, debt: f.debt, seized: f.seized, returned: f.returned, refund: f.refund ?? 0 });
+    W.bank = bankView(L);
+
+    W.prices = L.lastPrice; W.round++; W.volumes = fills; W.lastBook = bookStats;
+    // how long a round takes (decisions included), in slots and ms: loan terms and interest per round use it
+    const dSlots = L.slot - W.roundSlot, dMs = Date.now() - W.roundAt;
+    W.slotsPerRound = W.round === 1 ? dSlots : 0.7 * W.slotsPerRound + 0.3 * dSlots;
+    W.roundMs = W.round === 1 ? dMs : 0.7 * W.roundMs + 0.3 * dMs;
+    W.roundSlot = L.slot; W.roundAt = Date.now();
+    const m = metrics(L, fills, bookStats, made, shifts);
+    const doing = Object.fromEntries(Object.keys(CFG.TASKS).map(k => [k, 0]));
+    for (const a of agents) if (a.activity) doing[a.activity.task]++;
+    W.priceHistory.push({ round: W.round, prices: [...L.lastPrice], volumes: [...fills],
+      supply: L.supply, debt: L.debtTotalNow, badDebt: L.badDebt, doing,
+      equity: L.equity, lendingCap: L.lendingCap, writtenOff: L.books.writtenOff,
+      overdue: W.overdue, autoRepaid: W.autoRepaid,
+      hungry: agents.filter(a => a.hunger > 0).length, cold: agents.filter(a => a.cold >= 2).length,
+      held: GOODS.map((_, g) => agents.reduce((s, a) => s + a.goods[g], 0)),
+      // sell-through (sold of offered, offered incl. the bank's fire sale), the goal
+      offered: bookStats.map(b => b.askQty + b.bankQty), wanted: bookStats.map(b => b.bidQty), catch: W.catch(),
+      wellbeing: m.wellbeing, lifestyle: agents.reduce((s, a) => s + a.lifestyle, 0) / agents.length, ...m });
+    if (W.priceHistory.length > 1000) W.priceHistory.shift();
+    mark('books');
+    W.lastRound = { round: W.round, ms: Date.now() - t0, txs: sigs.length, sigs, decide, phases: phase };
+    const sum = f => L.slots.reduce((s, x) => s + f(x), 0);
+    emit('round', { round: W.round, prices: L.lastPrice, volumes: fills, txs: sigs.length, ms: Date.now() - t0, sigs,
+                    phases: phase,
+                    book: bookStats, ladder, orders: orderLog, live, noBankPrice, decide,
+                    roundMs: dMs, slotsPerRound: dSlots, trades, spoiled, foreclosures: overdueLoans.filter(f => f.kind === 'foreclosed'),
+                    collected: overdueLoans.filter(f => f.kind === 'collected'), made, metrics: m,
+                    // what the round used up, by purpose (net and house wood is taken when the shift is chosen)
+                    used: { food: { eaten: used.eaten, smoking: used.smokeFood },
+                            wood: { fires: used.fires, upkeep: used.upkeep, netWood: used.netWood, buildWood: used.buildWood, smoking: used.smokeWood },
+                            smoked: { eaten: used.smokedEaten } },
+                    dividend,                                  // cents paid to each villager by the bank this round (0 = none)
+                    bank: { supply: L.supply, debtTotal: L.debtTotal, debtTotalNow: L.debtTotalNow, badDebt: L.badDebt, goods: L.bank.goods,
+                            cash: L.bank.cash, bankBook: L.bankBook,
+                            equity: L.equity, lendingCap: L.lendingCap, capitalRequired: L.capitalRequired, books: L.books,
+                            // chain-side sums, so every round's invariants can be checked from the log
+                            sumCash: sum(x => x.cash), sumDebt: sum(x => x.debt), sumPrincipal: sum(x => x.principal),
+                            settlers: W.settlersSupply,
+                            // every agent: principal ≤ debt, and no debt ⇒ no principal and nothing locked
+                            slotsOk: L.slots.every(x => x.principal <= x.debt && (x.debt || (!x.principal && x.locked.every(q => !q)))),
+                            goodsTotal: GOODS.map((_, g) => sum(x => x.goods[g] + x.locked[g]) + L.bank.goods[g]), settled,
+                            loans: ops.map(o => ({ kind: o.kind, agent: o.agent, amount: o.amount, ok: !!o.ok,
+                              ...(o.kind === 'borrow' ? { term: o.topUp ? null : o.termRounds, termSlots: o.termSlots, dueRound: o.dueRound,
+                                                          collateral: o.collateral } : {}) })) },
+                    catch: W.catch(),
+                    agents: agents.map(a => ({ id: a.id, cash: a.cash, goods: a.goods, locked: a.locked, debt: a.debt, debtNow: W.debtNow(a),
+                      hunger: a.hunger, cold: a.cold,
+                      homes: W.houses(a),
+                      activity: a.activity?.task ?? null, kept: !!a.activity?.kept, lifestyle: a.lifestyle,
+                      building: a.building ? a.building.shifts : null, house: W.hasHouse(a), housesBuilt: a.housesBuilt,
+                      wellbeing: +a.wellbeing.toFixed(2), wbParts: a.wbParts, wealth: Math.round(W.wealth(a)), shifts: a.shifts,
+                      // diagnostics: who the villager is, what the round did to it, and why
+                      talent: a.talent, skills: Object.fromEntries(Object.entries(a.skills).map(([k, v]) => [k, +v.toFixed(2)])),
+                      ate: +(a.ateRound ?? 0).toFixed(2), rotted: a.rotRound ?? 0, upkeepPaid: a.upkeepPaid,
+                      made: Object.fromEntries(a.madeRound.flatMap((q, g) => q ? [[GOODS[g], q]] : [])),
+                      // chosen: its own call; kept: no answer, so its best doable job; redirected: asked for a job it lacked the wood for
+                      shiftWhy: !a.activity ? null : a.activity.kept ? 'kept' : a.activity.redirected ? 'redirected' : 'chosen',
+                      ...(a.hungryWhy ? { hungryWhy: a.hungryWhy } : {}) })) });
+    // What building that event, writing it to the run log and pushing it to every dashboard
+    // cost. Measured after the fact, so it is reported with the NEXT round, as `emitPrev`.
+    W.emitMs = Date.now() - pt;
+    phase.emit = W.emitMs;
+  }
+
+  // ---- how the economy is doing, once a round ------------------------------------
+  // GDP: everything produced this round (fish caught, wood cut, nets crafted, houses
+  // finished) at this round's prices — gross output, so wood that went into a net or a
+  // house is counted twice. Price index: the CFG.PRICE_BASKET at today's prices over the
+  // same basket at START_PRICES; inflation is its change over INFLATION_ROUNDS.
+  // Employment: finished shifts that were work, of all shifts (work or idle).
+  // Slack: goods offered for sale this round that didn't sell, at this round's prices.
+  // Gini: of net worth (W.wealth, negatives as 0). Credit: debt with interest accrued to now.
+  const START_BASKET = CFG.PRICE_BASKET.reduce((s, w, g) => s + w * CFG.START_PRICES[g], 0);
+  let wbBefore = 0;
+  function metrics(L, fills, bookStats, made, shifts) {
+    const p = L.lastPrice, n = agents.length;
+    const gdp = made.reduce((s, q, g) => s + q * p[g], 0);
+    // Real GDP: the same output at FIXED prices, so the chart shows what was made and not
+    // what inflation did to its price tag (nominal GDP once rose tenfold on flat output).
+    const realGdp = made.reduce((s, q, g) => s + q * REAL_PRICES[g], 0);
+    const priceIndex = CFG.PRICE_BASKET.reduce((s, w, g) => s + w * p[g], 0) / START_BASKET;
+    const then = W.priceHistory.at(-CFG.INFLATION_ROUNDS)?.priceIndex;
+    const unsold = bookStats.map((b, g) => Math.max(0, b.askQty + b.bankQty - fills[g]));
+    const offeredValue = bookStats.reduce((s, b, g) => s + (b.askQty + b.bankQty) * p[g], 0);
+    const slack = unsold.reduce((s, q, g) => s + q * p[g], 0);
+    const all = shifts.worked + shifts.idle;
+    // sales against what was made: how much of output goes through the market
+    const sales = fills.reduce((s, q, g) => s + q * p[g], 0);
+    const wb = agents.reduce((s, a) => s + a.wellbeing, 0);
+    const wbRound = (wb - wbBefore) / n; wbBefore = wb;
+    return {
+      made: [...made], gdp, realGdp, priceIndex: +priceIndex.toFixed(4), inflation: then ? +(priceIndex / then - 1).toFixed(4) : null,
+      shifts: { ...shifts }, employment: all ? +(shifts.worked / all).toFixed(3) : null,
+      sales,
+      tradedShare: gdp ? +(sales / gdp).toFixed(3) : null,
+      unsold, slack, slackShare: offeredValue ? +(slack / offeredValue).toFixed(3) : null,
+      wellbeing: +(wb / n).toFixed(2), wbRound: +wbRound.toFixed(3),
+      gini: +gini(agents.map(a => Math.max(0, W.wealth(a)))).toFixed(3),
+      credit: L.debtTotalNow, money: L.supply,
+      housesBuilt: W.housesBuilt, building: agents.filter(a => a.building).length, homeowners: agents.filter(a => W.hasHouse(a)).length,
+      houses: agents.reduce((s, a) => s + W.houses(a), 0),   // finished houses owned: more than one per villager is the point
+    };
+  }
+
+  W.emit = emit;
+  W.remember = remember;
+  return W;
+}

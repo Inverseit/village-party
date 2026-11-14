@@ -1,0 +1,31 @@
+node_modules/
+dist/
+target/
+.anchor/
+test-ledger/
+.env
+.DS_Store
+chain/target/
+chain/test-ledger/
+chain/app/node_modules/
+chain/app/package-lock.json
+*.bak
+*:Zone.Identifier
+.env
+backend/node_modules/
+runs/
+.claude/worktrees/
+
+# working notes — kept locally, not published
+CONTEXT.md
+FIX_PLAN.md
+FUTURE_PLAN.md
+REDESIGN_PLAN.md
+DEVPOST.md
+VIDEO_SCRIPT.md
+PITCH_CONTEXT.md
+docs/superpowers/
+
+# party build: project-local toolchain and keypair
+.tools/
+party/data/

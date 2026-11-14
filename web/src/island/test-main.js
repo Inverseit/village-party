@@ -1,0 +1,11 @@
+import './island3d.js';
+const el = document.querySelector('island-3d');
+window.island = el;
+const q = new URLSearchParams(location.search);
+if (q.has('hide')) el.setAttribute('hide-labels', '');
+const set = () => { if (!el.orbit) return setTimeout(set, 100); const o = el.orbit;
+  if (q.has('r')) o.r = o.tr = +q.get('r'); if (q.has('theta')) o.theta = o.ttheta = +q.get('theta'); if (q.has('phi')) o.phi = o.tphi = +q.get('phi'); };
+set();
+const wx = q.get('wx');
+if (wx) setInterval(() => { if (el.fx) { el.fx.target = wx; if (!q.has('fade')) el.fx.w[wx] = 1; } }, 30);
+setInterval(() => { if (el.fx && !window._said) { window._said = 1; console.log('plots', el.fx.plots.length, 'houses', el.fx.houses.length, 'frame', el._frame); } }, 3000);

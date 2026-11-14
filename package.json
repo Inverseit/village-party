@@ -1,0 +1,12 @@
+{
+  "name": "village-party",
+  "private": true,
+  "scripts": {
+    "start": "node party/server.mjs",
+    "test": "node --test party/*.test.mjs",
+    "sim": "node party/sim.mjs",
+    "web:install": "npm --prefix web install",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build"
+  }
+}
