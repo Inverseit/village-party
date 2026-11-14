@@ -95,12 +95,12 @@ export default function Round({ data, token, refresh, onGone }) {
         </section>
       )}
       {(me.hungry || me.cold) && (
-        <p className="warn">{me.hungry && me.cold ? 'You are hungry and cold: you need food and wood.' : me.hungry ? 'You are hungry: you need food.' : 'Your fire is out: you need wood.'}</p>
+        <p className="warn">{me.hungry && me.cold ? 'You are hungry and cold: you need apples and wood.' : me.hungry ? 'You are hungry: you need apples.' : 'Your fire is out: you need wood.'}</p>
       )}
 
       <p className="hint">
         {job ? 'You can change your mind until the time runs out.'
-          : `Pick a job. If you do not, you ${repeat ? `repeat: ${repeat.label}` : 'go fishing'}.`}
+          : `Pick a job. If you do not, you ${repeat ? `repeat: ${repeat.label}` : 'pick apples'}.`}
       </p>
       <div className="jobs">
         {options.map(o => <JobButton key={o.job} o={o} picked={job === o.job} crowd={game.crowd ? game.crowd[o.job] ?? 0 : null} onPick={send} />)}
@@ -115,9 +115,9 @@ export default function Round({ data, token, refresh, onGone }) {
 
       <section className="stats">
         <Stat label="coins" value={me.coins} />
-        <Stat label="food" value={me.food} bad={me.hungry || me.food < 2} />
+        <Stat label="apples" value={me.food} bad={me.hungry || me.food < 2} />
         <Stat label="wood" value={me.wood} bad={me.cold || me.wood < 1} />
-        <Stat label={me.nets === 1 ? 'net' : 'nets'} value={me.nets} />
+        <Stat label={me.nets === 1 ? 'basket' : 'baskets'} value={me.nets} />
         <Stat label={me.houses === 1 ? 'house' : 'houses'} value={me.houses} />
       </section>
       {me.building > 0 && (
@@ -126,7 +126,7 @@ export default function Round({ data, token, refresh, onGone }) {
           House under way: {me.building} of {plural(me.buildShifts, 'shift')} done
         </p>
       )}
-      <p className="hint small">Market prices: food {Math.round(game.prices.food)}, wood {Math.round(game.prices.wood)}, a net {Math.round(game.prices.nets)} coins</p>
+      <p className="hint small">Market prices: apples {Math.round(game.prices.food)}, wood {Math.round(game.prices.wood)}, a basket {Math.round(game.prices.nets)} coins</p>
 
       {me.note && (
         <section className="card last" key={game.round}>

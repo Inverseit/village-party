@@ -6,7 +6,7 @@ const B = `http://127.0.0.1:${arg('port', 8787)}`, humans = +arg('humans', 4), l
 const call = async (p, body) => (await fetch(B + p, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : undefined)).json();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const NAMES = ['Ulan', 'Nurgul', 'Timur', 'Dana', 'Bek', 'Madina', 'Arman', 'Zarina', 'Nurlan', 'Asel'];
-const SAY = ['trust me', 'this is fine', 'all in on fish', 'wood is the future', 'who took my lunch', 'I have a plan', 'no plan, only vibes', ''];
+const SAY = ['trust me', 'this is fine', 'all in on apples', 'wood is the future', 'who took my lunch', 'I have a plan', 'no plan, only vibes', ''];
 const JOBS = ['gather_food', 'gather_wood', 'craft_net', 'build_house'];
 const pick = xs => xs[Math.floor(Math.random() * xs.length)];
 

@@ -76,8 +76,8 @@ function Lobby({ game, me }) {
       <section className="card">
         <h2>How to play</h2>
         <ul>
-          <li>Each round, tap one job before the bar runs out: fish, chop wood, craft a net or build a house.</li>
-          <li>You need food to eat and wood for your fire every round. What you have spare is sold for you, what you lack is bought.</li>
+          <li>Each round, tap one job before the bar runs out: pick apples, chop wood, weave a basket or build a house.</li>
+          <li>You need apples to eat and wood for your fire every round. What you have spare is sold for you, what you lack is bought.</li>
           <li>A job everybody picks pays less.</li>
           <li>Most points after the last round wins.</li>
         </ul>

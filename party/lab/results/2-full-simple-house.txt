@@ -1,0 +1,385 @@
+Full report per economy, N=16, mixed population, 1000 games, simple house (2 shifts for everyone; two talents, no born builders).
+
+=== E0 "Open fields"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  careful          1182   1.16     43%   3.01
+  myopic           1145   1.12     32%   2.24
+  builder          1121   1.10      9%   0.62
+  specialist       1034   1.02     14%   0.95
+  contrarian        887   0.87      1%   0.08
+  casual            882   0.87      1%   0.06
+  random            876   0.86      1%   0.04
+    spec:pick      1015   1.00
+    spec:chop      1053   1.03
+by talent: chop 1027  pick 1010   (luck of the draw: best/worst talent 1.02x)
+1 strategies : best/worst 1.35x   top win index 3.01 (careful)   best adaptive 1182 vs best fixed 1121 (mean adaptive 1071 vs mean fixed 1078)
+2 skill      : careful scores   34% more than casual (+-0.5 pts s.e.)
+3 drama      : lead changes 2.5 a game (1.3 in the second half)   leader at half-time does not win   83%   half-time/final rank correlation 0.42
+               forest under 15% with 2+ rounds to go    0% of games (first at round  n/a), dead    0%, climbs back over 30%   n/a of those;  forest at half-time  100%, lowest  100%, end  100% (under 15% at the end    0%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.0% of villager-rounds, cold 0.0%   ever hungry/cold    0% (they end on  n/ax the others)   end below start    0%   Gini 0.09   mean score 1019   houses/head 2.05
+  jobs: pick 31%  chop 31%  build 38%
+  apple price by round: 12 9 12 10 11 11 11 11 10 9 9 8
+  wood price by round : 12 10 12 11 12 11 12 11 11 10 9 9
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood (each about 6 x your skill) or work on a house.
+   2. Everything you make is sold to the trader at once; a good is cheap in a round when many villagers make it and dear when few do.
+   3. You eat 1 apple a round, bought for you if you have none; if you cannot pay you go hungry and work at half strength next round.
+   4. A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 at the end and pays 25 rent every round.
+   5. Richest wins: coins plus 200 per house.
+
+=== E1a "Commons, planting unpaid"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  specialist       1077   1.24     38%   3.01
+  careful          1070   1.23     26%   2.05
+  myopic           1027   1.19     22%   1.74
+  builder           997   1.15      4%   0.34
+  planter           892   1.03     10%   0.78
+  casual            786   0.91      1%   0.06
+  random            594   0.69      0%   0.02
+  contrarian        489   0.56      0%   0.00
+    spec:pick      1045   1.21
+    spec:chop      1111   1.28
+by talent: chop 883  pick 850   (luck of the draw: best/worst talent 1.04x)
+1 strategies : best/worst 2.20x   top win index 3.01 (specialist)   best adaptive 1070 vs best fixed 1077 (mean adaptive 870 vs mean fixed 1037)
+2 skill      : careful scores   36% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.9 a game (0.9 in the second half)   leader at half-time does not win   64%   half-time/final rank correlation 0.65
+               forest under 15% with 2+ rounds to go    5% of games (first at round 6.6), dead   11%, climbs back over 30%   75% of those;  forest at half-time   62%, lowest   31%, end   34% (under 15% at the end   31%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.2% of villager-rounds, cold 0.0%   ever hungry/cold    2% (they end on 0.40x the others)   end below start    0%   Gini 0.16   mean score 867   houses/head 1.68
+  jobs: pick 29%  chop 29%  build 33%  plantF 10%
+  apple price by round: 13 10 14 12 13 12 12 11 11 10 9 9
+  wood price by round : 14 12 13 12 13 13 13 12 11 10 9 9
+  forest (% of K)     : 91 73 66 65 62 62 64 64 64 60 55 34
+  orchard oversubscribed (pickers had to share) in 28% of rounds; pickers got 94% of what they reached for on average
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 2 trees x skill (3 wood each), shared out if fewer are standing; standing trees regrow, fastest when the forest is half full, and a forest cut to nothing is dead until someone replants it.
+   4. Planting puts 4 saplings in the forest; they are trees two rounds later. It pays you nothing.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E1b "Commons, planting bounty"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  careful          1033   1.20     26%   2.11
+  specialist       1026   1.20     35%   2.78
+  myopic            988   1.15     20%   1.62
+  builder           969   1.13      9%   0.72
+  planter           881   1.03      9%   0.70
+  casual            756   0.88      1%   0.05
+  random            646   0.75      0%   0.01
+  contrarian        565   0.66      0%   0.01
+    spec:pick      1000   1.17
+    spec:chop      1053   1.23
+by talent: chop 874  pick 842   (luck of the draw: best/worst talent 1.04x)
+1 strategies : best/worst 1.83x   top win index 2.78 (specialist)   best adaptive 1033 vs best fixed 1026 (mean adaptive 867 vs mean fixed 998)
+2 skill      : careful scores   37% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.9 a game (0.9 in the second half)   leader at half-time does not win   65%   half-time/final rank correlation 0.61
+               forest under 15% with 2+ rounds to go    6% of games (first at round 7.2), dead   14%, climbs back over 30%   79% of those;  forest at half-time   63%, lowest   31%, end   33% (under 15% at the end   34%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.0% of villager-rounds, cold 0.0%   ever hungry/cold    0% (they end on 0.60x the others)   end below start    0%   Gini 0.14   mean score 858   houses/head 1.67
+  jobs: pick 29%  chop 29%  build 32%  plantF 10%
+  apple price by round: 13 10 13 12 13 13 12 11 11 10 9 9
+  wood price by round : 14 12 13 12 13 13 13 12 11 10 10 9
+  forest (% of K)     : 91 73 66 65 62 63 64 65 65 60 56 33
+  orchard oversubscribed (pickers had to share) in 28% of rounds; pickers got 94% of what they reached for on average
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 2 trees x skill (3 wood each), shared out if fewer are standing; standing trees regrow, fastest when the forest is half full, and a forest cut to nothing is dead until someone replants it.
+   4. Planting puts 4 saplings in the forest (trees two rounds later); the village chest takes 5% of every sale and pays planters 10 a sapling while it has coins.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E1c "Commons, planter owns the tree"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  orchardist       1146   1.29     29%   2.66
+  specialist       1071   1.21     35%   3.18
+  careful          1035   1.17      8%   0.69
+  myopic           1013   1.14     13%   1.19
+  builder          1002   1.13      7%   0.61
+  planter           920   1.04      7%   0.67
+  casual            768   0.87      1%   0.04
+  random            592   0.67      0%   0.00
+  contrarian        434   0.49      0%   0.00
+    spec:chop      1176   1.33
+    spec:pick       966   1.09
+by talent: chop 915  pick 857   (luck of the draw: best/worst talent 1.07x)
+1 strategies : best/worst 2.64x   top win index 3.18 (specialist)   best adaptive 1146 vs best fixed 1071 (mean adaptive 909 vs mean fixed 1036)
+2 skill      : careful scores   35% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.6 a game (0.9 in the second half)   leader at half-time does not win   65%   half-time/final rank correlation 0.40
+               forest under 15% with 2+ rounds to go   15% of games (first at round 9.2), dead   35%, climbs back over 30%    9% of those;  forest at half-time   64%, lowest   17%, end   18% (under 15% at the end   60%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.2% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.41x the others)   end below start    0%   Gini 0.16   mean score 886   houses/head 1.71
+  jobs: pick 22%  chop 27%  build 33%  plantF 7%  plantA 11%
+  apple price by round: 15 11 15 13 11 10 9 9 8 7 7 6
+  wood price by round : 15 14 14 14 13 13 13 12 11 10 10 10
+  forest (% of K)     : 93 80 73 75 66 64 64 57 54 44 37 18
+  orchard oversubscribed (pickers had to share) in 16% of rounds; pickers got 97% of what they reached for on average
+  private apple trees per head at the end: 1.28
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 2 trees x skill (3 wood each), shared out if fewer are standing; standing trees regrow, fastest when the forest is half full, and a forest cut to nothing is dead until someone replants it.
+   4. Plant an apple tree and it is YOURS: from two rounds later it hands you its 2 apples every round without picking. Plant in the forest (4 saplings) and the trees belong to everyone.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E1d "Commons, own apple trees + forest bounty"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  orchardist       1109   1.26     29%   2.66
+  specialist       1020   1.16     30%   2.72
+  careful          1007   1.15      8%   0.75
+  myopic            982   1.12     14%   1.28
+  builder           982   1.12     11%   0.94
+  planter           916   1.04      8%   0.68
+  casual            737   0.84      0%   0.02
+  random            641   0.73      0%   0.00
+  contrarian        516   0.59      0%   0.00
+    spec:chop      1118   1.27
+    spec:pick       923   1.05
+by talent: chop 906  pick 850   (luck of the draw: best/worst talent 1.07x)
+1 strategies : best/worst 2.15x   top win index 2.72 (specialist)   best adaptive 1109 vs best fixed 1020 (mean adaptive 906 vs mean fixed 1001)
+2 skill      : careful scores   37% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.7 a game (1.0 in the second half)   leader at half-time does not win   69%   half-time/final rank correlation 0.32
+               forest under 15% with 2+ rounds to go   12% of games (first at round 9.0), dead   33%, climbs back over 30%   22% of those;  forest at half-time   65%, lowest   19%, end   19% (under 15% at the end   58%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.1% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.56x the others)   end below start    0%   Gini 0.14   mean score 878   houses/head 1.70
+  jobs: pick 22%  chop 27%  build 33%  plantF 7%  plantA 11%
+  apple price by round: 15 11 15 13 11 10 9 9 8 7 7 6
+  wood price by round : 15 14 14 14 13 13 13 12 11 10 10 10
+  forest (% of K)     : 93 80 73 75 66 65 64 59 55 47 39 19
+  orchard oversubscribed (pickers had to share) in 16% of rounds; pickers got 97% of what they reached for on average
+  private apple trees per head at the end: 1.27
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 2 trees x skill (3 wood each), shared out if fewer are standing; standing trees regrow, fastest when the forest is half full, and a forest cut to nothing is dead until someone replants it.
+   4. Plant an apple tree and it is YOURS (2 apples a round from two rounds later, no picking), or plant 4 forest saplings, for which the village chest (5% of every sale) pays you 10 each while it has coins.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E2 "Seasons and storage"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  careful          1064   1.16     22%   1.99
+  seasonal         1049   1.14     37%   3.38
+  myopic           1043   1.14     21%   1.93
+  builder           958   1.04      4%   0.33
+  hoarder           957   1.04      2%   0.16
+  specialist        945   1.03     11%   1.01
+  contrarian        782   0.85      1%   0.07
+  casual            765   0.83      1%   0.09
+  random            706   0.77      1%   0.04
+    spec:chop      1021   1.11
+    spec:pick       868   0.95
+by talent: chop 913  pick 924   (luck of the draw: best/worst talent 1.01x)
+1 strategies : best/worst 1.51x   top win index 3.38 (seasonal)   best adaptive 1064 vs best fixed 958 (mean adaptive 979 vs mean fixed 951)
+2 skill      : careful scores   39% more than casual (+-0.8 pts s.e.)
+3 drama      : lead changes 4.0 a game (2.4 in the second half)   leader at half-time does not win   82%   half-time/final rank correlation 0.45
+               forest under 15% with 2+ rounds to go    0% of games (first at round  n/a), dead    0%, climbs back over 30%   n/a of those;  forest at half-time  100%, lowest  100%, end  100% (under 15% at the end    0%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.1% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.66x the others)   end below start    0%   Gini 0.11   mean score 919   houses/head 1.92
+  jobs: pick 32%  chop 31%  build 36%
+  apple price by round: 18 11 12 10 16 12 9 10 16 11 8 8
+  wood price by round : 13 13 14 11 13 11 13 11 11 11 12 7
+  jobs by season      : Sp pick 22% chop 22% build 56% | Su pick 53% chop 28% build 20% | Au pick 44% chop 23% build 33% | Wi pick 9% chop 54% build 37%
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job (pick apples, chop wood, work on a house) and, for apples and for wood, a switch: SELL what you have or KEEP it.
+   2. Rounds run Spring, Summer, Autumn, Winter, three years. Apple trees give half in spring, the usual 6 x skill in summer, double in autumn, nothing in winter.
+   3. Kept apples rot by a quarter every round; wood keeps. Whatever is sold in a round sets its price: a good that few sell is dear.
+   4. You eat 1 apple a round and burn 2 wood each winter (bought for you if you have none); hungry or cold means half strength next round.
+   5. A house takes 3 shifts and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house; stores left at the end are sold in the last round.
+
+=== E3 "Commons + seasons"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  seasonal          870   1.19     22%   2.20
+  careful           857   1.17     11%   1.11
+  specialist        842   1.15     25%   2.47
+  builder           827   1.13     10%   0.99
+  myopic            820   1.12     14%   1.37
+  planter           813   1.11     11%   1.15
+  hoarder           811   1.11      7%   0.66
+  casual            594   0.81      1%   0.09
+  random            458   0.63      0%   0.00
+  contrarian        427   0.58      0%   0.00
+    spec:chop       972   1.33
+    spec:pick       724   0.99
+by talent: chop 753  pick 709   (luck of the draw: best/worst talent 1.06x)
+1 strategies : best/worst 2.04x   top win index 2.47 (specialist)   best adaptive 870 vs best fixed 842 (mean adaptive 766 vs mean fixed 835)
+2 skill      : careful scores   44% more than casual (+-1.1 pts s.e.)
+3 drama      : lead changes 2.6 a game (1.6 in the second half)   leader at half-time does not win   68%   half-time/final rank correlation 0.61
+               forest under 15% with 2+ rounds to go    0% of games (first at round 10.0), dead    3%, climbs back over 30%    0% of those;  forest at half-time   80%, lowest   46%, end   46% (under 15% at the end    9%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.3% of villager-rounds, cold 0.2%   ever hungry/cold    4% (they end on 0.62x the others)   end below start    0%   Gini 0.16   mean score 731   houses/head 1.62
+  jobs: pick 29%  chop 31%  build 33%  plantF 8%
+  apple price by round: 16 12 14 17 15 12 14 17 16 12 12 14
+  wood price by round : 14 14 13 13 13 13 13 11 12 11 11 7
+  forest (% of K)     : 95 87 82 77 75 80 78 77 77 78 73 46
+  jobs by season      : Sp pick 23% chop 22% build 48% | Su pick 48% chop 24% build 21% | Au pick 36% chop 29% build 28% | Wi pick 8% chop 49% build 34%
+  orchard oversubscribed (pickers had to share) in 49% of rounds; pickers got 70% of what they reached for on average
+6 rules (7 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job (pick, chop, build, plant) and, for apples and for wood, a switch: SELL what you have or KEEP it. A good few villagers sell is dear.
+   2. Rounds run Spring, Summer, Autumn, Winter, three years. ONE orchard: each tree bears 2 apples in summer, 1 in spring, 4 in autumn, none in winter; pickers share what is ripe and the rest is lost.
+   3. ONE forest: a chop shift fells 2 trees x skill (3 wood each), shared out if fewer are standing; standing trees regrow, fastest when the forest is half full, and a forest cut to nothing is dead until someone replants it.
+   4. Planting puts 4 saplings in the forest (trees two rounds later); the village chest takes 5% of every sale and pays planters 10 a sapling while it has coins.
+   5. Kept apples rot by a quarter every round; wood keeps.
+   6. You eat 1 apple a round and burn 2 wood each winter (bought for you if you have none and can pay); hungry or cold means half strength next round.
+   7. A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E4a "Thinning forest, planting unpaid"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  specialist       1142   1.25     38%   3.01
+  careful          1134   1.25     28%   2.25
+  myopic           1073   1.18     21%   1.70
+  builder          1026   1.13      5%   0.36
+  planter           951   1.04      8%   0.64
+  casual            825   0.91      1%   0.04
+  random            623   0.68      0%   0.00
+  contrarian        511   0.56      0%   0.01
+    spec:pick      1137   1.25
+    spec:chop      1148   1.26
+by talent: chop 911  pick 910   (luck of the draw: best/worst talent 1.00x)
+1 strategies : best/worst 2.23x   top win index 3.01 (specialist)   best adaptive 1134 vs best fixed 1142 (mean adaptive 917 vs mean fixed 1084)
+2 skill      : careful scores   38% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.8 a game (0.8 in the second half)   leader at half-time does not win   62%   half-time/final rank correlation 0.68
+               forest under 15% with 2+ rounds to go    6% of games (first at round 3.1), dead    1%, climbs back over 30%  100% of those;  forest at half-time   76%, lowest   34%, end   43% (under 15% at the end    3%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.1% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.38x the others)   end below start    0%   Gini 0.16   mean score 911   houses/head 1.67
+  jobs: pick 30%  chop 28%  build 32%  plantF 10%
+  apple price by round: 14 12 15 13 14 13 13 12 12 11 10 10
+  wood price by round : 12 10 14 14 14 13 12 11 11 10 9 9
+  forest (% of K)     : 86 55 54 63 71 76 78 76 76 71 68 43
+  orchard oversubscribed (pickers had to share) in 31% of rounds; pickers got 93% of what they reached for on average
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 3 trees x skill when the forest is full and proportionally fewer as it thins (half a forest, half the trees); each tree is 3 wood, and standing trees regrow, fastest when the forest is half full.
+   4. Planting puts 5 saplings in the forest; they are trees two rounds later. It pays you nothing.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E4b "Thinning forest, planting bounty"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  careful          1056   1.18     32%   2.53
+  specialist       1033   1.16     29%   2.31
+  myopic            991   1.11     21%   1.66
+  builder           975   1.09     10%   0.76
+  planter           930   1.04      9%   0.68
+  casual            776   0.87      0%   0.03
+  random            711   0.80      0%   0.01
+  contrarian        668   0.75      0%   0.02
+    spec:pick      1038   1.16
+    spec:chop      1028   1.15
+by talent: chop 892  pick 894   (luck of the draw: best/worst talent 1.00x)
+1 strategies : best/worst 1.58x   top win index 2.53 (careful)   best adaptive 1056 vs best fixed 1033 (mean adaptive 912 vs mean fixed 1004)
+2 skill      : careful scores   36% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 2.1 a game (1.0 in the second half)   leader at half-time does not win   67%   half-time/final rank correlation 0.57
+               forest under 15% with 2+ rounds to go    5% of games (first at round 3.1), dead    1%, climbs back over 30%  100% of those;  forest at half-time   76%, lowest   34%, end   44% (under 15% at the end    3%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.0% of villager-rounds, cold 0.0%   ever hungry/cold    0% (they end on 0.68x the others)   end below start    0%   Gini 0.12   mean score 893   houses/head 1.65
+  jobs: pick 30%  chop 28%  build 32%  plantF 10%
+  apple price by round: 14 12 15 13 14 13 13 12 12 11 10 10
+  wood price by round : 12 10 14 14 14 12 12 11 11 10 9 9
+  forest (% of K)     : 86 56 54 63 72 76 77 76 76 71 70 44
+  orchard oversubscribed (pickers had to share) in 31% of rounds; pickers got 93% of what they reached for on average
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 3 trees x skill when the forest is full and proportionally fewer as it thins (half a forest, half the trees); each tree is 3 wood, and standing trees regrow, fastest when the forest is half full.
+   4. Planting puts 5 saplings in the forest (trees two rounds later); the village chest takes 10% of every sale and pays planters 12 a sapling while it has coins.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E4c "Thinning forest, planter owns the tree"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  orchardist       1196   1.28     33%   2.96
+  specialist       1130   1.21     35%   3.22
+  careful          1100   1.18      9%   0.77
+  myopic           1061   1.14     13%   1.20
+  builder          1049   1.12      5%   0.44
+  planter           963   1.03      5%   0.45
+  casual            810   0.87      0%   0.01
+  random            624   0.67      0%   0.00
+  contrarian        487   0.52      0%   0.00
+    spec:chop      1207   1.29
+    spec:pick      1055   1.13
+by talent: chop 954  pick 916   (luck of the draw: best/worst talent 1.04x)
+1 strategies : best/worst 2.45x   top win index 3.22 (specialist)   best adaptive 1196 vs best fixed 1130 (mean adaptive 962 vs mean fixed 1090)
+2 skill      : careful scores   36% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.6 a game (0.9 in the second half)   leader at half-time does not win   65%   half-time/final rank correlation 0.43
+               forest under 15% with 2+ rounds to go    3% of games (first at round 5.1), dead    1%, climbs back over 30%   97% of those;  forest at half-time   69%, lowest   31%, end   35% (under 15% at the end    8%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.2% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.41x the others)   end below start    0%   Gini 0.16   mean score 935   houses/head 1.68
+  jobs: pick 24%  chop 26%  build 31%  plantF 7%  plantA 11%
+  apple price by round: 16 13 17 13 12 11 10 9 9 8 7 7
+  wood price by round : 13 12 13 15 13 14 13 12 11 10 10 10
+  forest (% of K)     : 89 70 62 69 61 69 69 69 66 60 55 35
+  orchard oversubscribed (pickers had to share) in 19% of rounds; pickers got 96% of what they reached for on average
+  private apple trees per head at the end: 1.27
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 3 trees x skill when the forest is full and proportionally fewer as it thins (half a forest, half the trees); each tree is 3 wood, and standing trees regrow, fastest when the forest is half full.
+   4. Plant an apple tree and it is YOURS: from two rounds later it hands you its 2 apples every round without picking. Plant in the forest (5 saplings) and the trees belong to everyone.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== E4d "Thinning forest, own apple trees + forest bounty"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  orchardist       1114   1.22     31%   2.80
+  careful          1034   1.13     11%   0.94
+  specialist       1024   1.12     25%   2.30
+  builder           999   1.09     12%   1.11
+  myopic            992   1.08     14%   1.29
+  planter           953   1.04      6%   0.57
+  casual            770   0.84      0%   0.01
+  random            701   0.77      0%   0.00
+  contrarian        647   0.71      0%   0.01
+    spec:chop      1088   1.19
+    spec:pick       960   1.05
+by talent: chop 928  pick 901   (luck of the draw: best/worst talent 1.03x)
+1 strategies : best/worst 1.72x   top win index 2.80 (orchardist)   best adaptive 1114 vs best fixed 1024 (mean adaptive 948 vs mean fixed 1012)
+2 skill      : careful scores   34% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.8 a game (1.1 in the second half)   leader at half-time does not win   73%   half-time/final rank correlation 0.29
+               forest under 15% with 2+ rounds to go    3% of games (first at round 5.3), dead    1%, climbs back over 30%   94% of those;  forest at half-time   70%, lowest   31%, end   36% (under 15% at the end    9%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.1% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.68x the others)   end below start    0%   Gini 0.12   mean score 915   houses/head 1.66
+  jobs: pick 24%  chop 26%  build 31%  plantF 8%  plantA 11%
+  apple price by round: 16 13 17 13 12 11 10 9 9 8 8 7
+  wood price by round : 13 12 13 15 13 14 13 12 11 10 10 10
+  forest (% of K)     : 89 70 61 70 62 70 69 70 68 61 56 36
+  orchard oversubscribed (pickers had to share) in 20% of rounds; pickers got 96% of what they reached for on average
+  private apple trees per head at the end: 1.26
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round pick ONE job: pick apples, chop wood, work on a house, or plant. What you make is sold to the trader at once; the more the village sells of a good that round, the cheaper it is.
+   2. ONE orchard: every apple tree bears 2 apples a round. Pickers take up to 6 x skill each; if they want more than is ripe they share it, and unpicked apples are lost.
+   3. ONE forest: a chop shift fells 3 trees x skill when the forest is full and proportionally fewer as it thins (half a forest, half the trees); each tree is 3 wood, and standing trees regrow, fastest when the forest is half full.
+   4. Plant an apple tree and it is YOURS (2 apples a round from two rounds later, no picking), or plant 5 forest saplings, for which the village chest (10% of every sale) pays you 12 each while it has coins.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you are hungry and work at half strength next round). A house takes 3 shifts (2 for a born builder) and 5 wood a shift, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.
+
+=== REC "Recommended: thinning forest + own apple trees + bounty + 2-shift house"   N=16  population=mixed  games=1000 ===
+strategy       mean score  x mean   wins   win index (1 = fair share)
+  orchardist       1114   1.22     31%   2.80
+  careful          1034   1.13     11%   0.94
+  specialist       1024   1.12     25%   2.30
+  builder           999   1.09     12%   1.11
+  myopic            992   1.08     14%   1.29
+  planter           953   1.04      6%   0.57
+  casual            770   0.84      0%   0.01
+  random            701   0.77      0%   0.00
+  contrarian        647   0.71      0%   0.01
+    spec:chop      1088   1.19
+    spec:pick       960   1.05
+by talent: chop 928  pick 901   (luck of the draw: best/worst talent 1.03x)
+1 strategies : best/worst 1.72x   top win index 2.80 (orchardist)   best adaptive 1114 vs best fixed 1024 (mean adaptive 948 vs mean fixed 1012)
+2 skill      : careful scores   34% more than casual (+-0.7 pts s.e.)
+3 drama      : lead changes 1.8 a game (1.1 in the second half)   leader at half-time does not win   73%   half-time/final rank correlation 0.29
+               forest under 15% with 2+ rounds to go    3% of games (first at round 5.3), dead    1%, climbs back over 30%   94% of those;  forest at half-time   70%, lowest   31%, end   36% (under 15% at the end    9%)
+               a round with >1/3 hungry or cold    0% of games (in a winter    0%); two rounds later under 10% afflicted   n/a
+4 pain       : hungry 0.1% of villager-rounds, cold 0.0%   ever hungry/cold    1% (they end on 0.68x the others)   end below start    0%   Gini 0.12   mean score 915   houses/head 1.66
+  jobs: pick 24%  chop 26%  build 31%  plantF 8%  plantA 11%
+  apple price by round: 16 13 17 13 12 11 10 9 9 8 8 7
+  wood price by round : 13 12 13 15 13 14 13 12 11 10 10 10
+  forest (% of K)     : 89 70 61 70 62 70 69 70 68 61 56 36
+  orchard oversubscribed (pickers had to share) in 20% of rounds; pickers got 96% of what they reached for on average
+  private apple trees per head at the end: 1.26
+6 rules (5 sentences; the text describes the module's own constants, not command-line overrides):
+   1. Each round choose ONE job: pick apples, chop wood, build, or plant. What you make is sold to the trader at once; the more the whole village sells of a good that round, the lower its price.
+   2. The ORCHARD is shared: each tree bears 2 apples a round; pickers take up to 6 x skill each, and share what is ripe if they want more.
+   3. The FOREST is shared: in a full forest a chop shift fells 3 trees x skill (3 wood each), in a half-empty forest half as many; standing trees slowly grow back.
+   4. PLANT either an apple tree of your own (from two rounds later it gives you 2 apples every round, no picking) or 5 forest saplings (trees two rounds later), for which the village chest, a tenth of every sale, pays you 12 each while it has coins.
+   5. You eat 1 apple a round (bought for you; if you cannot pay you go hungry and work at half strength next round). A house takes 2 shifts and 5 wood each, is worth 200 and pays 25 rent a round. Richest wins: coins plus 200 per house.

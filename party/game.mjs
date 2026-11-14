@@ -2,12 +2,14 @@ import { villagerNames } from '../backend/src/names.mjs';
 import { botDecision, botJob, STRATEGIES } from './bots.mjs';
 
 export const JOBS = {
-  gather_food: { label: 'Fish', place: 'Docks' },
+  gather_food: { label: 'Pick apples', place: 'Orchard' },
   gather_wood: { label: 'Chop wood', place: 'Forest' },
-  craft_net: { label: 'Craft a net', place: 'Workshop' },
+  craft_net: { label: 'Weave a basket', place: 'Workshop' },
   build_house: { label: 'Build a house', place: 'Building site' },
 };
 export const GOODS = ['food', 'wood', 'nets'];
+// What the goods are called on screen. The keys stay as they were: food is apples, a net is a basket.
+export const GOOD_NAME = { food: 'apples', wood: 'wood', nets: 'baskets' };
 // Money is in cents. Every good a villager makes beyond what they keep is sold to the mainland
 // trader, and the price of a good each round falls with how much of it the village offers:
 // a job everybody picks pays badly, a job nobody picks pays well.
@@ -18,14 +20,14 @@ export const C = {
   MAX_AGENTS: 60, GRACE_MS: 1500,
 };
 export const EVENTS = [
-  { id: 'storm', title: 'Storm', blurb: 'The sea is furious. Fishing brings in a third of the usual catch.', rounds: 2, fish: 0.33 },
-  { id: 'shoal', title: 'Fish frenzy', blurb: 'Fish are jumping into the boats. Fishing brings in double.', rounds: 2, fish: 2 },
+  { id: 'storm', title: 'Hailstorm', blurb: 'Hail is flattening the orchard. Picking brings in a third of the usual harvest.', rounds: 2, fish: 0.33 },
+  { id: 'shoal', title: 'Bumper crop', blurb: 'The branches are bending to the ground. Picking brings in double.', rounds: 2, fish: 2 },
   { id: 'fire', title: 'Forest fire', blurb: 'Half the forest is smoke. Chopping brings in a third.', rounds: 2, chop: 0.33 },
   { id: 'cold', title: 'Cold snap', blurb: 'Every fire burns three times the wood.', rounds: 2, burn: 3 },
-  { id: 'blight', title: 'Blight', blurb: 'Every larder rots tonight. All stored food is lost.', rounds: 1, rotFood: 1 },
-  { id: 'gulls', title: 'Seagull heist', blurb: 'Organised seagulls take 3 food from every villager.', rounds: 1, stealFood: 3 },
+  { id: 'blight', title: 'Blight', blurb: 'Every larder rots tonight. All stored apples are lost.', rounds: 1, rotFood: 1 },
+  { id: 'gulls', title: 'Crow heist', blurb: 'Organised crows take 3 apples from every villager.', rounds: 1, stealFood: 3 },
   { id: 'tax', title: 'Surprise tax', blurb: 'The three richest villagers each hand a fifth of their coins to the three poorest.', rounds: 1, tax: true },
-  { id: 'boom', title: 'Golden season', blurb: 'Everything grows. Fishing and chopping bring in half as much again.', rounds: 2, fish: 1.5, chop: 1.5 },
+  { id: 'boom', title: 'Golden season', blurb: 'Everything grows. Picking and chopping bring in half as much again.', rounds: 2, fish: 1.5, chop: 1.5 },
 ];
 const CHAOS_P = [0, 0.15, 0.3, 0.55];
 const PERSONALITIES = ['greedy', 'lazy', 'paranoid', 'dreamer', 'gossip', 'philosopher', 'dramatic', 'competitive'];
@@ -106,7 +108,7 @@ export function createGame(settings, emit, clock = realClock, brain = null) {
     return (C.HOUSE_VALUE + C.RENT * rentRounds - left * C.HOUSE_WOOD * g.prices.wood) / left;
   };
 
-  // wood for a net or a house: what is short of it is bought at the last price
+  // wood for a basket or a house: what is short of it is bought at the last price
   const canGet = (a, n) => a.wood + Math.floor(a.coins / g.prices.wood) >= n;
   const woodLine = (a, n) => a.wood >= n ? `Uses ${n} wood.` : `Uses ${n} wood: you have ${a.wood}, the rest is bought for about ${Math.round((n - a.wood) * g.prices.wood / 100)}.`;
   function getWood(a, n) {
@@ -121,11 +123,11 @@ export function createGame(settings, emit, clock = realClock, brain = null) {
     const P = g.prices, c = x => Math.round(x / 100), weak = strength(a) < 1 ? ' You are weak from hunger or cold.' : '';
     const left = shiftsFor(a) - a.building;
     return [
-      { job: 'gather_food', label: 'Fish', place: 'Docks', can: true, est: c(catchOf(a) * P.food), detail: `About ${catchOf(a)} food${hasNet(a) ? ' with your net' : ''}.${weak}` },
+      { job: 'gather_food', label: 'Pick apples', place: 'Orchard', can: true, est: c(catchOf(a) * P.food), detail: `About ${catchOf(a)} apples${hasNet(a) ? ' with your basket' : ''}.${weak}` },
       { job: 'gather_wood', label: 'Chop wood', place: 'Forest', can: true, est: c(cutOf(a) * P.wood), detail: `About ${cutOf(a)} wood.${weak}` },
-      { job: 'craft_net', label: 'Craft a net', place: 'Workshop', can: canGet(a, C.NET_WOOD),
+      { job: 'craft_net', label: 'Weave a basket', place: 'Workshop', can: canGet(a, C.NET_WOOD),
         est: c((hasNet(a) ? P.nets : Math.min(P.nets, (C.NET_BONUS - 1) * C.FISH * a.skills.fish * P.food * C.NET_USES)) - C.NET_WOOD * P.wood),
-        detail: !canGet(a, C.NET_WOOD) ? `Needs ${C.NET_WOOD} wood and you cannot afford it.` : `${woodLine(a, C.NET_WOOD)} ` + (hasNet(a) ? 'You have a net, so this one is sold.' : `A net lifts your catch by ${Math.round((C.NET_BONUS - 1) * 100)}% for ${C.NET_USES} fishing shifts.`) },
+        detail: !canGet(a, C.NET_WOOD) ? `Needs ${C.NET_WOOD} wood and you cannot afford it.` : `${woodLine(a, C.NET_WOOD)} ` + (hasNet(a) ? 'You have a basket, so this one is sold.' : `A basket lifts your harvest by ${Math.round((C.NET_BONUS - 1) * 100)}% for ${C.NET_USES} picking shifts.`) },
       { job: 'build_house', label: 'Build a house', place: 'Building site', can: canGet(a, C.HOUSE_WOOD), est: c(houseWorth(a)),
         detail: !canGet(a, C.HOUSE_WOOD) ? `Needs ${C.HOUSE_WOOD} wood and you cannot afford it.` : `Shift ${a.building + 1} of ${shiftsFor(a)}. ${woodLine(a, C.HOUSE_WOOD)} A house is worth ${c(C.HOUSE_VALUE)} and pays ${c(C.RENT)} rent a round.` },
     ];
@@ -202,18 +204,18 @@ export function createGame(settings, emit, clock = realClock, brain = null) {
       if (crowd[a.job] === most) a.stats.crowd++;
       if ((crowd[a.job] ?? 0) === least) a.stats.alone++;
       let job = a.job;
-      if (job === 'craft_net' && !getWood(a, C.NET_WOOD)) { job = 'gather_wood'; a.note += 'You could not afford the wood for a net, so you chopped wood instead. '; }
+      if (job === 'craft_net' && !getWood(a, C.NET_WOOD)) { job = 'gather_wood'; a.note += 'You could not afford the wood for a basket, so you chopped wood instead. '; }
       if (job === 'build_house' && !getWood(a, C.HOUSE_WOOD)) { job = 'gather_wood'; a.note += 'You could not afford the wood to build, so you chopped wood instead. '; }
       a.did = job;
       if (job === 'gather_food') {
         if (a.netUses === 0 && a.nets > 0) { a.nets--; a.netUses = C.NET_USES; }
         const q = catchOf(a); a.food += q; made.food += q; a.stats.fish++; a.stats.caught += q;
-        if (a.netUses > 0 && --a.netUses === 0) a.note += 'Your net wore out. ';
-        a.note += `You caught ${q} food. `;
+        if (a.netUses > 0 && --a.netUses === 0) a.note += 'Your basket wore out. ';
+        a.note += `You picked ${q} apples. `;
       } else if (job === 'gather_wood') {
         const q = cutOf(a); a.wood += q; made.wood += q; a.stats.chop++; a.stats.chopped += q; a.note += `You chopped ${q} wood. `;
       } else if (job === 'craft_net') {
-        a.nets++; made.nets++; a.stats.craft++; a.note += 'You crafted a net. ';
+        a.nets++; made.nets++; a.stats.craft++; a.note += 'You wove a basket. ';
       } else {
         a.building++; a.stats.build++;
         if (a.building >= shiftsFor(a)) { a.building = 0; a.houses++; made.houses++; a.note += 'Your house is finished! '; say('house', `${a.name} finished a house.`, { agent: a.id }); }
@@ -233,7 +235,7 @@ export function createGame(settings, emit, clock = realClock, brain = null) {
       const target = C.PRICE0[good] * clamp((ref / Math.max(S, ref * 0.2)) ** C.ELASTIC, ...C.SWING);
       P[good] = Math.round(C.SMOOTH * P[good] + (1 - C.SMOOTH) * (S || good !== 'nets' ? target : C.PRICE0.nets));
       g.volumes[good] = S; gdp += S * P[good];
-      g.agents.forEach((a, i) => { const n = spare[good][i]; if (n) { a[good] -= n; a.coins += n * P[good]; a.earned += n * P[good]; a.stats.sold += n * P[good]; a.note += `Sold ${n} ${good} for ${Math.round(n * P[good] / 100)}. `; } });
+      g.agents.forEach((a, i) => { const n = spare[good][i]; if (n) { a[good] -= n; a.coins += n * P[good]; a.earned += n * P[good]; a.stats.sold += n * P[good]; a.note += `Sold ${n} ${n === 1 && good === 'nets' ? 'basket' : GOOD_NAME[good]} for ${Math.round(n * P[good] / 100)}. `; } });
     }
     for (const a of g.agents) if (a.houses) { const r = a.houses * C.RENT; a.coins += r; a.earned += r; a.stats.rent += r; a.note += `Rent: ${Math.round(r / 100)}. `; }
 
@@ -248,7 +250,7 @@ export function createGame(settings, emit, clock = realClock, brain = null) {
     const burn = C.BURN * (ev?.burn ?? 1);
     const need = (a, good, n) => {
       const short = n - a[good], buy = Math.max(0, Math.min(short, Math.floor(a.coins / P[good])));
-      if (buy > 0) { a[good] += buy; a.coins -= buy * P[good]; a.earned -= buy * P[good]; a.stats.bought += buy * P[good]; a.note += `Bought ${buy} ${good} for ${Math.round(buy * P[good] / 100)}. `; }
+      if (buy > 0) { a[good] += buy; a.coins -= buy * P[good]; a.earned -= buy * P[good]; a.stats.bought += buy * P[good]; a.note += `Bought ${buy} ${GOOD_NAME[good]} for ${Math.round(buy * P[good] / 100)}. `; }
       const ok = a[good] >= n; a[good] = Math.max(0, a[good] - n);
       return ok;
     };

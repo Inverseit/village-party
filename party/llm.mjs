@@ -20,11 +20,11 @@ function findKey() {
   return null;
 }
 
-const RULES = `You run the AI villagers in "Village Party", a party game on a small island. Human players and AI villagers share one economy.
-Each round every villager picks ONE job: gather_food (fish), gather_wood (chop), craft_net, build_house.
+const RULES = `You run the AI villagers in "Village Party", a party game set in an orchard village on a small island. Human players and AI villagers share one economy.
+Each round every villager picks ONE job: gather_food (pick apples in the orchard), gather_wood (chop wood in the forest), craft_net (weave a basket in the workshop; a basket lifts an apple harvest), build_house (build a house).
 Whatever a villager makes beyond what they keep is sold; the price of a good falls the more of it the village offers that round, so a job everybody picks pays badly and a job nobody picks pays well.
-Everyone eats 2 food and burns 1 wood a round, buying what is short. A finished house is worth 200 coins and pays 25 rent every round after. The richest villager at the end wins (coins plus houses).
-"est" is what a job would pay this villager at LAST round's prices; "crowd" is how many villagers picked each job last round.`;
+Everyone eats 2 apples and burns 1 wood a round, buying what is short. A finished house is worth 200 coins and pays 25 rent every round after. The richest villager at the end wins (coins plus houses).
+"est" is what a job would pay this villager at LAST round's prices; "crowd" is how many villagers picked each job last round. There is no fishing and no sea work in this village: say apples, baskets, orchard.`;
 const TASK = `For each villager below choose a job from that villager's own "can" list. Play each one by their strategy, then by their personality. Do not have everyone pick the same job.
 Also write "say": one short remark (at most 14 words) in that villager's voice about what they are doing or what just happened. Be funny and specific: name other villagers, mock the crowd, react to the event. Plain text, no emojis, no quotation marks.`;
 const SCHEMA = { type: 'json_schema', json_schema: { name: 'picks', strict: true, schema: { type: 'object', additionalProperties: false, required: ['picks'], properties: {
@@ -56,7 +56,7 @@ export function createBrain({ key = findKey(), model = process.env.OPENAI_MODEL 
   // view: { round, rounds, prices, crowd, event, leader, villagers: [{ id, name, strategy, personality, talent, coins, houses, building, weak, can: [{ job, est }] }] }
   // onPicks is called once per chunk as it lands, with [{ id, job, say }].
   function decideRound(view, onPicks, timeoutMs = 8000) {
-    const head = `Round ${view.round} of ${view.rounds}. Prices last round: food ${view.prices.food}, wood ${view.prices.wood}, net ${view.prices.nets}.` +
+    const head = `Round ${view.round} of ${view.rounds}. Prices last round: apples ${view.prices.food}, wood ${view.prices.wood}, basket ${view.prices.nets}.` +
       (view.crowd ? ` Crowd last round: ${Object.entries(view.crowd).map(([j, n]) => `${j} ${n}`).join(', ')}.` : ' This is the first round.') +
       (view.event ? ` Event now: ${view.event.title} (${view.event.blurb})` : '') + (view.leader ? ` Leading: ${view.leader}.` : '');
     const chunks = [];

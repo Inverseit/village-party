@@ -4,7 +4,7 @@ import { command } from '../store.js';
 const CHAOS = [
   { name: 'Calm', text: 'No surprises. Just the economy.' },
   { name: 'Mild', text: 'Something happens now and then.' },
-  { name: 'Spicy', text: 'A storm, a tax, a seagull heist: about every third round.' },
+  { name: 'Spicy', text: 'A hailstorm, a tax, a crow heist: about every third round.' },
   { name: 'Mayhem', text: 'Something goes wrong more rounds than not.' },
 ];
 const clamp = (v, lo, hi, d) => Math.min(hi, Math.max(lo, Number.isFinite(+v) ? +v : d));
@@ -18,12 +18,13 @@ function Slider({ label, unit, value, min, max, onChange }) {
   );
 }
 
-export default function Setup({ defaults, party, onBack }) {
+export default function Setup({ defaults, brains, party, onBack }) {
   const from = party?.settings ?? defaults ?? {};
   const [bots, setBots] = useState(() => clamp(from.bots, 0, 40, 16));
   const [rounds, setRounds] = useState(() => clamp(from.rounds, 5, 30, 10));
   const [secs, setSecs] = useState(() => clamp(from.roundSeconds, 6, 30, 12));
   const [chaos, setChaos] = useState(() => clamp(from.chaos, 0, 3, 2));
+  const [brain, setBrain] = useState(() => from.brain === 'openai' && brains?.openai ? 'openai' : 'scripted');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [games, setGames] = useState([]);
@@ -36,7 +37,7 @@ export default function Setup({ defaults, party, onBack }) {
 
   async function create() {
     setBusy(true); setError('');
-    try { await command('/api/game', { bots, rounds, roundSeconds: secs, chaos }); }
+    try { await command('/api/game', { bots, rounds, roundSeconds: secs, chaos, brain }); }
     catch (e) { setError(e.message || 'Could not create the game.'); }
     setBusy(false);
   }
@@ -60,10 +61,11 @@ export default function Setup({ defaults, party, onBack }) {
       </div>
       <label className="vp-field">
         <span className="vp-field-top"><span>Villager brain</span></span>
-        <select defaultValue="scripted">
-          <option value="scripted">Scripted (funny)</option>
-          <option value="openai" disabled>OpenAI (needs an API key: coming soon)</option>
+        <select value={brain} onChange={e => setBrain(e.target.value)}>
+          <option value="scripted">Scripted (free, instant)</option>
+          <option value="openai" disabled={!brains?.openai}>{brains?.openai ? `OpenAI ${brains.model} (writes its own lines)` : 'OpenAI (no API key on this server)'}</option>
         </select>
+        {brain === 'openai' && <span className="vp-hint">{secs < 10 ? 'The model takes a few seconds to answer: use rounds of 10 seconds or more.' : 'Each villager plays its own strategy. Costs well under a cent a game.'}</span>}
       </label>
       {error && <div className="vp-error">{error}</div>}
       <button className="vp-btn vp-btn-big" disabled={busy} onClick={create}>{busy ? 'Creating…' : 'Create game'}</button>

@@ -1,0 +1,122 @@
+Sensitivity, 1000 games per row, today's house (3 shifts, 2 for a born builder; three talents). Rooms "mostly X" are 70% X, the rest spread over the other strategies.
+
+--- E0 "Open fields" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   29%       1.44       2.50       0.96        2.0        1.0       0.50        51%         0%        n/a         0%        0.0        0.0         0%       0.12        723       1.31       1.05
+N=16 mixed                  31%       1.49       4.08       0.92        1.5        0.5       0.55        38%         0%        n/a         0%        0.0        0.0         0%       0.13        784       1.43       1.04
+N=40 mixed                  30%       1.48       5.25       0.91        1.5        0.4       0.50        23%         0%        n/a         0%        0.0        0.0         0%       0.12        809       1.51       1.04
+N=16 mostly myopic          26%       1.54       4.55       0.85        1.3        0.5       0.52        34%         0%        n/a         0%        0.0        0.0         0%       0.11        833       1.43       1.03
+N=16 mostly careful         25%       1.54       5.63       0.86        1.5        0.6       0.49        46%         0%        n/a         0%        0.0        0.0         0%       0.10        832       1.44       1.07
+N=16 mostly casual          43%       1.49       5.82       1.00        3.3        1.6       0.45        71%         0%        n/a         0%        0.0        0.0         0%       0.12        740       1.29       1.13
+N=6 mostly myopic           23%       1.52       2.55       0.87        1.7        0.7       0.57        37%         0%        n/a         0%        0.0        0.0         0%       0.10        757       1.24       1.04
+N=40 mostly myopic          25%       1.54       4.32       0.85        1.1        0.3       0.44        24%         0%        n/a         0%        0.0        0.0         0%       0.10        857       1.50       1.06
+
+--- E1a "Commons, planting unpaid" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   39%       2.24       2.98       0.92        1.7        0.7       0.63        35%        23%        63%         0%        0.2        0.0         1%       0.19        601       1.02       1.03
+N=16 mixed                  40%       2.96       4.82       0.88        1.3        0.4       0.69        26%         5%        52%         0%        0.3        0.0         1%       0.21        685       1.18       1.05
+N=40 mixed                  36%       3.52       5.66       0.86        1.3        0.2       0.67        17%         0%        75%         0%        0.5        0.0         1%       0.21        708       1.27       1.05
+N=16 mostly myopic          34%       4.62       7.41       0.84        1.3        0.5       0.70        27%        90%         9%         0%        0.2        0.0         4%       0.21        589       0.87       1.21
+N=16 mostly careful         36%       4.37       6.51       0.83        1.5        0.5       0.68        29%        84%         2%         0%        0.2        0.0         2%       0.17        652       1.01       1.06
+N=16 mostly casual          51%       3.63       7.32       0.97        3.0        1.2       0.57        62%        12%        16%         0%        0.2        0.0         0%       0.17        652       1.10       1.09
+N=6 mostly myopic           30%       2.51       2.37       0.87        1.6        0.5       0.66        31%        74%        27%         0%        0.1        0.0         3%       0.20        514       0.77       1.20
+N=40 mostly myopic          31%       5.71      11.44       0.81        1.6        0.8       0.67        39%        94%         1%         0%        0.4        0.0         4%       0.20        623       0.92       1.17
+
+--- E1b "Commons, planting bounty" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   39%       1.95       2.83       0.93        1.8        0.7       0.58        39%        19%        66%         0%        0.1        0.0         0%       0.17        595       1.02       1.02
+N=16 mixed                  41%       2.27       4.83       0.89        1.3        0.4       0.64        26%         4%        76%         0%        0.1        0.0         0%       0.18        678       1.18       1.03
+N=40 mixed                  35%       2.58       5.51       0.86        1.3        0.3       0.63        17%         1%        75%         0%        0.1        0.0         0%       0.18        699       1.27       1.02
+N=16 mostly myopic          32%       2.29       7.37       0.86        1.3        0.5       0.66        28%        89%        15%         0%        0.0        0.0         3%       0.19        585       0.87       1.19
+N=16 mostly careful         34%       2.13       6.14       0.84        1.5        0.5       0.64        34%        83%         5%         0%        0.0        0.0         0%       0.14        652       1.03       1.06
+N=16 mostly casual          52%       2.40       7.23       0.97        3.0        1.3       0.51        62%         6%        25%         0%        0.0        0.0         0%       0.15        643       1.09       1.10
+N=6 mostly myopic           28%       1.93       2.62       0.85        1.6        0.5       0.65        30%        73%        49%         0%        0.0        0.0         2%       0.18        515       0.77       1.19
+N=40 mostly myopic          30%       2.46      10.75       0.82        1.5        0.8       0.62        39%        91%         2%         0%        0.0        0.0         2%       0.17        623       0.94       1.14
+
+--- E1c "Commons, planter owns the tree" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   66%       2.41       3.69       1.18        1.9        0.9       0.51        65%        35%        39%         0%        0.1        0.0         0%       0.19        666       0.95       1.11
+N=16 mixed                  59%       3.32       2.83       1.06        1.5        0.7       0.57        57%        20%        14%         0%        0.3        0.0         0%       0.21        742       1.08       1.15
+N=40 mixed                  59%       3.71       4.12       1.04        1.5        0.6       0.58        44%         7%        25%         0%        0.4        0.0         0%       0.21        766       1.14       1.16
+N=16 mostly myopic          57%       3.09       6.68       1.15        1.6        0.8       0.57        59%        97%         1%         0%        0.1        0.0         2%       0.20        603       0.81       1.12
+N=16 mostly careful         44%       2.90       7.22       0.90        1.7        0.6       0.55        45%        94%         0%         0%        0.1        0.0         1%       0.13        672       0.90       1.14
+N=16 mostly casual          66%       3.17       8.15       1.08        2.8        1.1       0.49        66%        12%         5%         0%        0.2        0.0         0%       0.17        664       0.86       1.11
+N=6 mostly myopic           56%       2.53       4.71       1.41        1.9        0.8       0.56        54%        83%        20%         0%        0.1        0.0         2%       0.19        539       0.73       1.15
+N=40 mostly myopic          54%       3.67       8.41       1.09        1.8        1.1       0.53        65%        99%         0%         0%        0.3        0.0         1%       0.18        628       0.82       1.11
+
+--- E1d "Commons, own apple trees + forest bounty" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   65%       2.11       3.74       1.19        1.9        0.9       0.48        66%        33%        49%         0%        0.1        0.0         0%       0.17        658       0.94       1.12
+N=16 mixed                  58%       2.45       2.71       1.07        1.5        0.8       0.50        58%        18%        16%         0%        0.1        0.0         0%       0.18        735       1.08       1.15
+N=40 mixed                  57%       2.78       3.99       1.05        1.5        0.6       0.52        45%         5%        27%         0%        0.1        0.0         0%       0.18        757       1.13       1.15
+N=16 mostly myopic          54%       2.24       6.75       1.16        1.6        0.9       0.55        63%        96%        17%         0%        0.0        0.0         2%       0.18        602       0.80       1.10
+N=16 mostly careful         39%       2.03       6.64       0.91        1.6        0.6       0.55        45%        94%        53%         0%        0.0        0.0         0%       0.11        693       0.92       1.17
+N=16 mostly casual          65%       2.30       8.50       1.09        2.8        1.1       0.46        67%         4%         8%         0%        0.0        0.0         0%       0.16        656       0.85       1.13
+N=6 mostly myopic           52%       2.41       4.74       1.35        1.9        0.8       0.55        56%        83%        51%         0%        0.0        0.0         1%       0.17        548       0.74       1.12
+N=40 mostly myopic          58%       2.25       7.59       1.11        1.7        1.1       0.50        65%        99%        11%         0%        0.0        0.0         1%       0.16        631       0.83       1.09
+
+--- E2 "Seasons and storage" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   48%       1.85       2.70       1.09        3.1        1.7       0.57        55%         0%        n/a         0%        0.2        0.0         0%       0.14        659       1.12       1.04
+N=16 mixed                  43%       1.78       3.81       0.97        2.3        1.1       0.68        45%         0%        n/a         0%        0.2        0.0         0%       0.15        707       1.26       1.03
+N=40 mixed                  40%       1.77       5.80       0.95        1.8        0.6       0.69        27%         0%        n/a         0%        0.1        0.0         0%       0.15        726       1.34       1.06
+N=16 mostly myopic          45%       1.82       3.81       1.04        2.2        1.0       0.75        40%         0%        n/a         0%        0.0        0.0         0%       0.13        721       1.11       1.19
+N=16 mostly careful         21%       1.92       8.10       1.05        2.7        1.2       0.64        34%         0%        n/a         0%        0.3        0.0         0%       0.14        732       0.68       1.29
+N=16 mostly casual          52%       1.79       6.84       1.06        4.1        1.8       0.57        60%         0%        n/a         0%        0.1        0.0         0%       0.16        637       1.11       1.07
+N=6 mostly myopic           46%       1.83       1.69       1.08        2.7        1.1       0.66        47%         0%        n/a         0%        0.1        0.0         0%       0.12        684       0.97       1.18
+N=40 mostly myopic          44%       1.73       8.14       1.01        1.5        0.7       0.76        33%         0%        n/a         0%        0.0        0.0         0%       0.13        733       1.12       1.20
+
+--- E3 "Commons + seasons" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   52%       2.52       1.79       0.99        2.7        1.3       0.52        48%        12%        15%         1%        0.5        0.3         4%       0.20        472       0.80       1.07
+N=16 mixed                  45%       2.71       4.89       0.85        1.7        0.7       0.61        27%         0%        n/a         1%        0.6        0.3         2%       0.21        538       0.97       1.08
+N=40 mixed                  37%       2.75       6.39       0.85        1.4        0.3       0.65        12%         0%        n/a         0%        0.5        0.3         1%       0.21        559       1.04       1.07
+N=16 mostly myopic          42%       2.14       5.89       0.86        1.8        0.7       0.57        24%        11%         0%         0%        0.2        0.1         2%       0.19        492       0.94       1.24
+N=16 mostly careful         22%       3.44       8.35       0.86        2.7        1.2       0.53        32%        87%        15%         9%        1.3        0.2         3%       0.18        464       0.53       1.24
+N=16 mostly casual          56%       2.79       7.07       0.96        3.4        1.5       0.52        50%         1%        17%         0%        0.3        0.3         1%       0.20        471       0.80       1.08
+N=6 mostly myopic           53%       2.27       2.15       1.00        2.3        0.9       0.51        36%        35%        16%         1%        0.1        0.3         8%       0.20        411       0.73       1.23
+N=40 mostly myopic          45%       2.07       9.08       0.86        1.6        0.6       0.62        28%         2%         0%         0%        0.1        0.1         0%       0.17        526       1.00       1.27
+
+--- E4a "Thinning forest, planting unpaid" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   51%       2.24       2.77       0.99        1.6        0.6       0.67        36%        18%        94%         0%        0.1        0.0         1%       0.19        643       1.00       1.05
+N=16 mixed                  51%       2.97       3.70       0.95        1.3        0.4       0.73        29%         1%       100%         0%        0.3        0.0         0%       0.21        759       1.25       1.03
+N=40 mixed                  52%       3.76       4.00       0.96        1.4        0.3       0.77        23%         0%       100%         0%        0.5        0.0         1%       0.22        800       1.35       1.02
+N=16 mostly myopic          57%       3.69       4.35       1.00        1.3        0.5       0.73        36%        31%        80%         0%        0.2        0.0         2%       0.21        617       0.92       1.32
+N=16 mostly careful         45%       3.82       3.75       0.91        1.3        0.5       0.71        42%        22%        87%         0%        0.2        0.0         1%       0.17        698       1.18       1.12
+N=16 mostly casual          54%       3.41       7.09       0.99        2.7        1.1       0.59        54%         0%       100%         0%        0.2        0.0         0%       0.16        698       1.10       1.07
+N=6 mostly myopic           63%       2.62       2.57       1.04        1.2        0.4       0.67        29%        65%        58%         0%        0.1        0.0         4%       0.22        510       0.71       1.30
+N=40 mostly myopic          53%       4.43       7.68       0.98        1.3        0.3       0.76        23%        15%        95%         0%        0.3        0.0         1%       0.19        665       1.02       1.35
+
+--- E4b "Thinning forest, planting bounty" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   50%       1.75       2.49       1.01        1.6        0.7       0.61        40%        19%        92%         0%        0.0        0.0         0%       0.15        630       0.99       1.03
+N=16 mixed                  48%       1.88       3.38       0.97        1.5        0.5       0.64        34%         1%       100%         0%        0.0        0.0         0%       0.16        741       1.23       1.00
+N=40 mixed                  48%       2.14       3.61       0.97        1.5        0.4       0.66        31%         0%        n/a         0%        0.0        0.0         0%       0.16        785       1.33       1.03
+N=16 mostly myopic          48%       1.81       4.49       1.02        1.3        0.5       0.70        36%        27%        88%         0%        0.0        0.0         2%       0.17        606       0.92       1.26
+N=16 mostly careful         32%       1.54       3.82       0.90        1.4        0.6       0.64        43%        20%        98%         0%        0.0        0.0         0%       0.13        699       1.21       1.06
+N=16 mostly casual          51%       1.82       6.34       1.01        2.7        1.2       0.49        57%         0%       100%         0%        0.0        0.0         0%       0.14        687       1.09       1.10
+N=6 mostly myopic           45%       2.24       2.43       1.02        1.2        0.5       0.64        30%        59%        86%         0%        0.0        0.0         3%       0.19        508       0.73       1.22
+N=40 mostly myopic          42%       1.69       7.57       0.99        1.3        0.4       0.72        27%        12%        98%         0%        0.0        0.0         0%       0.15        661       1.04       1.25
+
+--- E4c "Thinning forest, planter owns the tree" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   65%       2.32       3.56       1.20        1.9        0.9       0.52        67%        21%        85%         0%        0.1        0.0         0%       0.19        709       0.92       1.08
+N=16 mixed                  60%       3.16       2.15       1.07        1.5        0.7       0.60        57%         1%       100%         0%        0.3        0.0         0%       0.20        807       1.15       1.13
+N=40 mixed                  61%       3.88       2.40       1.04        1.6        0.8       0.65        54%         0%        n/a         0%        0.7        0.0         0%       0.21        845       1.26       1.17
+N=16 mostly myopic          74%       2.93       6.67       1.32        1.4        0.7       0.71        60%        43%        50%         0%        0.1        0.0         2%       0.21        634       0.87       1.25
+N=16 mostly careful         44%       2.75       6.12       0.95        1.3        0.5       0.69        40%        40%        31%         0%        0.1        0.0         0%       0.14        718       0.77       1.22
+N=16 mostly casual          64%       3.07       7.87       1.11        2.4        0.9       0.51        60%         0%         0%         0%        0.1        0.0         0%       0.16        723       0.89       1.09
+N=6 mostly myopic           67%       3.15       4.98       1.50        1.3        0.6       0.61        50%        70%        46%         0%        0.1        0.0         2%       0.21        549       0.69       1.19
+N=40 mostly myopic          72%       3.59       6.83       1.29        1.4        0.6       0.74        49%        27%        71%         0%        0.2        0.0         1%       0.19        676       0.96       1.28
+
+--- E4d "Thinning forest, own apple trees + forest bounty" ---
+                            gap best/worst     topWin adapt/fixed     leadCh       late   halfCorr   comeback  forest<15      recov   pain>1/3     hungry       cold      below       gini      score     houses     talent
+N=6 mixed                   62%       1.92       3.46       1.22        1.9        0.9       0.45        71%        16%        92%         0%        0.1        0.0         0%       0.15        697       0.93       1.10
+N=16 mixed                  55%       2.00       2.38       1.08        1.6        0.9       0.47        63%         1%        89%         0%        0.1        0.0         0%       0.16        791       1.14       1.14
+N=40 mixed                  55%       2.16       2.09       1.05        1.8        1.0       0.49        64%         0%        n/a         0%        0.0        0.0         0%       0.16        827       1.24       1.19
+N=16 mostly myopic          65%       2.34       7.16       1.33        1.5        0.8       0.68        65%        37%        86%         0%        0.0        0.0         2%       0.18        633       0.89       1.21
+N=16 mostly careful         38%       1.73       4.74       0.94        1.3        0.5       0.58        40%        34%       100%         0%        0.0        0.0         0%       0.11        758       0.83       1.18
+N=16 mostly casual          62%       1.88       7.55       1.10        2.5        1.0       0.44        65%         0%        n/a         0%        0.0        0.0         0%       0.14        712       0.88       1.12
+N=6 mostly myopic           61%       3.05       5.07       1.46        1.4        0.7       0.61        53%        61%        87%         0%        0.0        0.0         2%       0.19        551       0.70       1.17
+N=40 mostly myopic          66%       2.04       8.89       1.28        1.5        0.7       0.72        57%        25%        97%         0%        0.0        0.0         0%       0.16        679       1.00       1.22
