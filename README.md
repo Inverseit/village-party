@@ -9,6 +9,8 @@ villagers who all have their own strategies, personalities and opinions about yo
 
 `Real-time multiplayer` · `AI agents` · `Live market economy` · `Built at Eurasian Hack London with Devin`
 
+<sub>Built on the public <a href="https://devpost.com/software/_solanasim">Settlers of Solana</a> project: the 3D island, villager names and the Solana sim come from it (<a href="#where-it-came-from">details</a>).</sub>
+
 <a href="https://inverseit.github.io/village-party/docs/village-party-demo.mp4"><img src="docs/screenshots/film-poster.jpg" alt="Village Party demo film (86 s): click to play" width="100%"></a>
 
 **[▶ Demo film (86 s)](https://inverseit.github.io/village-party/docs/village-party-demo.mp4)** · **[Pitch deck](https://inverseit.github.io/village-party/docs/deck/)** · [Speaker-notes deck](https://inverseit.github.io/village-party/docs/pitch.html) (arrow keys to move, N for notes)
@@ -248,4 +250,4 @@ foreclosure settles on a Solana program. Village Party takes that idea (a villag
 in a market where prices are set by everyone's choices) and turns it into something a room full
 of people can play together in ten minutes. The 3D island and villager names come from that project.
 
-The original README, with setup for the Solana sim, is in [`docs/SETTLERS.md`](docs/SETTLERS.md).
+Settlers of Solana is public and written up on [Devpost](https://devpost.com/software/_solanasim). The original README, with setup for the Solana sim, is in [`docs/SETTLERS.md`](docs/SETTLERS.md).
