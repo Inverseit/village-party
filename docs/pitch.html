@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Village Party · pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Grandstander:wght@800;900&family=Nunito:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#ffcf4a; --gold-deep:#b9811c; --ink:#33261c; --soft:#6d5f52; --card:#fffdf6; --line:rgba(51,38,28,.12);
+  --pick:#d1495b; --chop:#3f9450; --weave:#d98c2b; --build:#cf6046; --mint:#5fe3ae; --coral:#ff7d63;
+  --panel:rgba(13,13,16,.74); --dline:rgba(255,255,255,.13); --dim:#a9aeb4;
+  --display:Grandstander,'Baloo 2',cursive; --head:'Baloo 2','Trebuchet MS',sans-serif; --body:Nunito,system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0d1a22;overflow:hidden;font-family:var(--body);color:var(--ink)}
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:0 0}
+.slide{position:absolute;inset:0;border-radius:6px;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .45s ease, transform .45s ease;transform:translateY(14px)}
+.slide.on{opacity:1;pointer-events:auto;transform:none}
+h1,h2,h3,p{margin:0}
+
+/* light slides: the phone's sky-to-sand */
+.light{background:linear-gradient(180deg,#bdeaf7 0,#e8f6e3 40%,#f3e2b4 100%)}
+.light .kicker{color:var(--soft)}
+/* dark slides: the host screen over the island */
+.dark{color:#f4f5f6;background:#0f2a36}
+.dark .bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05)}
+.dark .scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,12,16,.94) 0,rgba(10,12,16,.82) 40%,rgba(10,12,16,.25) 75%,rgba(10,12,16,.1) 100%)}
+.pad{position:absolute;inset:0;padding:78px 96px}
+.kicker{font-size:20px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.title{font-family:var(--display);font-weight:900;color:var(--gold);line-height:.98;text-shadow:0 6px 0 #6b4a2a,0 10px 0 rgba(43,28,15,.4)}
+.light .h{font-family:var(--head);font-weight:800;font-size:68px;line-height:1.02;color:var(--ink);margin-top:10px}
+.dark .h{font-family:var(--display);font-weight:900;font-size:66px;line-height:1.02;color:var(--gold);text-shadow:0 5px 0 #6b4a2a;margin-top:10px}
+.lead{font-size:30px;font-weight:700;line-height:1.3;margin-top:22px}
+.light .lead{color:var(--soft)}
+.dark .lead{color:#dfe2e5}
+.card{background:var(--card);border:2.5px solid var(--line);border-radius:22px;box-shadow:0 5px 0 var(--line);padding:22px 26px}
+.panel{background:var(--panel);border:1px solid var(--dline);border-radius:20px;backdrop-filter:blur(8px);box-shadow:0 14px 40px rgba(0,0,0,.35);padding:24px 28px}
+.pill{display:inline-block;padding:7px 16px;border-radius:99px;font-weight:800;font-size:18px;background:var(--ink);color:#fff}
+.chip{display:inline-block;font-size:14px;font-weight:800;letter-spacing:.1em;padding:5px 8px 4px;border-radius:5px;background:var(--gold);color:#1d1a18;vertical-align:middle}
+.chip.ai{background:rgba(255,255,255,.18);color:#e3e5e8}
+.btn{display:inline-block;border-radius:18px;padding:14px 30px;background:var(--gold);color:#1d1a18;font-family:var(--display);font-weight:900;font-size:34px;box-shadow:0 6px 0 var(--gold-deep)}
+.shot{border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:block}
+.phone{border-radius:34px;border:10px solid #1d1a18;box-shadow:0 22px 50px rgba(51,38,28,.35);display:block;background:#fff}
+.bubble{position:absolute;background:#fff;color:#2b2420;border-radius:16px;padding:12px 18px;font-weight:700;font-size:21px;line-height:1.25;box-shadow:0 8px 20px rgba(0,0,0,.25);max-width:420px}
+.bubble b{display:block;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8b7f74;margin-bottom:3px}
+.bubble:after{content:'';position:absolute;left:30px;bottom:-12px;border:12px solid transparent;border-top-color:#fff;border-bottom:0}
+.mono{font-family:var(--mono)}
+
+/* jobs */
+.jobs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px;width:820px}
+.job{display:flex;gap:16px;align-items:center;padding:16px 18px;border-radius:20px;border:3px solid var(--c);background:var(--t);box-shadow:0 5px 0 var(--c)}
+.job i{flex:none;width:58px;height:58px;border-radius:15px;background:var(--c);display:grid;place-items:center;color:#fff}
+.job b{display:block;font-family:var(--head);font-size:29px;line-height:1.05}
+.job span{font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--c)}
+.pick{--c:var(--pick);--t:#fbe6e9}.chop{--c:var(--chop);--t:#e6f3e6}.weave{--c:var(--weave);--t:#fbefdc}.build{--c:var(--build);--t:#fae6e0}
+
+/* bars */
+.bars{display:flex;flex-direction:column;gap:11px;margin-top:20px}
+.bar{display:grid;grid-template-columns:300px 1fr 70px;align-items:center;gap:14px;font-weight:800;font-size:21px}
+.bar .t{height:26px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar .t div{height:100%;border-radius:8px;background:var(--gold)}
+.bar .v{font-family:var(--mono);color:var(--gold);text-align:right}
+.big{font-family:var(--display);font-weight:900;font-size:76px;line-height:1;color:var(--gold)}
+.stat p{font-size:20px;font-weight:700;color:#cfd3d7;margin-top:6px;line-height:1.25}
+
+ul.clean{list-style:none;padding:0;margin:0}
+ul.clean li{position:relative;padding-left:36px;font-size:26px;font-weight:700;line-height:1.3;margin:14px 0}
+ul.clean li:before{content:'';position:absolute;left:4px;top:11px;width:16px;height:16px;border-radius:50%;background:var(--c,var(--gold))}
+
+/* chrome */
+#bar{position:fixed;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.08);z-index:10}
+#bar div{height:100%;background:var(--gold);transition:width .35s}
+#count{position:fixed;right:18px;bottom:14px;font:500 14px var(--mono);color:rgba(255,255,255,.55);z-index:10}
+#notes{position:fixed;left:0;right:0;bottom:5px;max-height:34vh;overflow:auto;background:rgba(10,10,12,.92);color:#e8e8e8;font:600 18px/1.45 var(--body);padding:16px 26px 20px;z-index:9;display:none;border-top:2px solid var(--gold)}
+#notes.on{display:block}
+#notes b{color:var(--gold)}
+#help{transition:opacity .6s;position:fixed;left:18px;bottom:14px;font:500 13px var(--mono);color:rgba(255,255,255,.4);z-index:10}
+@media print{#bar,#count,#notes,#help{display:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1 · title -->
+<section class="slide dark" data-notes="<b>0:00–0:15</b> Hi, we built Village Party. Your phone is a villager, the big screen is a living island, and the economy pushes back. (Keep the host screen ready in another tab for the demo.)">
+  <div class="bg" style="background-image:url(screenshots/host-hero.jpg);filter:blur(2px);transform:scale(1.03)"></div>
+  <div class="scrim"></div>
+  <div class="pad" style="display:flex;flex-direction:column;justify-content:center">
+    <div class="kicker">Eurasian Hack London · built with Devin</div>
+    <h1 class="title" style="font-size:150px;margin-top:18px">Village<br>Party</h1>
+    <p class="lead" style="max-width:760px;font-size:34px">Your phone is a villager. The big screen is a living island. <span style="color:var(--gold)">The economy pushes back.</span></p>
+    <div style="margin-top:38px;display:flex;gap:12px">
+      <span class="chip" style="font-size:16px;padding:8px 12px">REAL-TIME MULTIPLAYER</span>
+      <span class="chip ai" style="font-size:16px;padding:8px 12px">AI VILLAGERS</span>
+      <span class="chip ai" style="font-size:16px;padding:8px 12px">LIVE MARKET</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · problem -->
+<section class="slide light" data-notes="<b>0:15–0:35</b> Party games for a big room are trivia or pure luck. Economy games are spreadsheets with fixed prices. And getting 30 people into one game means app installs, accounts, and an empty lobby if only three turn up. We wanted something you learn in ten seconds but have to actually think about.">
+  <div class="pad">
+    <div class="kicker">The problem</div>
+    <h2 class="h">Big-room party games are<br>trivia, luck, or homework.</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:56px">
+      <div class="card" style="border-color:#eab3a3">
+        <div style="width:64px;height:64px;border-radius:18px;background:#fbe0d8;color:#c4472f;display:grid;place-items:center"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
+        <h3 style="font-family:var(--head);font-size:34px;margin-top:10px">No real decisions</h3>
+        <p style="font-size:22px;font-weight:600;color:var(--soft);margin-top:8px;line-height:1.35">Trivia rewards what you know, dice reward nobody. Nothing you choose depends on what the room chooses.</p>
+      </div>
+      <div class="card" style="border-color:#eab3a3">
+        <div style="width:64px;height:64px;border-radius:18px;background:#fbe0d8;color:#c4472f;display:grid;place-items:center"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2.5 20h19"/></svg></div>
+        <h3 style="font-family:var(--head);font-size:34px;margin-top:10px">Static economies</h3>
+        <p style="font-size:22px;font-weight:600;color:var(--soft);margin-top:8px;line-height:1.35">Trading games have fixed prices and long rulebooks. Fun for four people at a table, not forty at a meetup.</p>
+      </div>
+      <div class="card" style="border-color:#eab3a3">
+        <div style="width:64px;height:64px;border-radius:18px;background:#fbe0d8;color:#c4472f;display:grid;place-items:center"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
+        <h3 style="font-family:var(--head);font-size:34px;margin-top:10px">Friction to start</h3>
+        <p style="font-size:22px;font-weight:600;color:var(--soft);margin-top:8px;line-height:1.35">App installs, accounts, and a dead lobby if only three people show up.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · the game -->
+<section class="slide light" data-notes="<b>0:35–0:55</b> Four buttons. Each round you pick one job. The catch: prices are set by what everybody just did. If the whole room picks apples, apples are worth nothing. If nobody chops wood, the one person who did gets rich. So every round is a guess about what everyone else is about to do.">
+  <div class="pad">
+    <div class="kicker">The game</div>
+    <h2 class="h" style="font-size:62px">Four buttons. One rule:<br><span style="color:var(--pick)">a job everybody picks<br>pays badly.</span></h2>
+    <div class="jobs">
+      <div class="job pick"><i><svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 7.2c-1.6-1.3-3.6-1.7-5.3-1C4.2 7.2 3 10 3.6 13.3c.7 3.9 3.2 7.2 5.6 7.2 1 0 1.7-.5 2.8-.5s1.8.5 2.8.5c2.4 0 4.9-3.3 5.6-7.2.6-3.3-.6-6.1-3.1-7.1-1.7-.7-3.7-.3-5.3 1z"/><path d="M12 7.2c.1-2 1-3.6 2.7-4.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i><div><b>Pick apples</b><span>Orchard</span></div></div>
+      <div class="job chop"><i><svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 1.5l5.5 7h-2.7l5.2 7h-6.5V22h-3v-6.5H4l5.2-7H6.5z"/></svg></i><div><b>Chop wood</b><span>Forest</span></div></div>
+      <div class="job weave"><i><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5h17l-2 9.5h-13zM7 10.5c0-4 2.2-6.5 5-6.5s5 2.5 5 6.5M8.5 10.5l1 9.5M15.5 10.5l-1 9.5M12 10.5v9.5M4.3 14.8h15.4"/></svg></i><div><b>Weave a basket</b><span>Workshop · +60% apples</span></div></div>
+      <div class="job build"><i><svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 2.5L1.8 11.5h2.7V21h5.7v-6h3.6v6h5.7v-9.5h2.7z"/></svg></i><div><b>Build a house</b><span>Building site · pays rent</span></div></div>
+    </div>
+    <div class="card" style="width:820px;margin-top:28px;font-size:23px;font-weight:700;line-height:1.45;color:var(--soft)">
+      Spare goods sell to the trader at <span class="mono" style="color:var(--ink)">price ∝ (ref / village supply)<sup>0.6</sup></span>. Everyone eats apples and burns wood every round. Most points (coins + houses) wins.
+    </div>
+    <img class="phone" src="screenshots/phone-round.jpg" style="position:absolute;right:110px;top:80px;width:350px">
+  </div>
+</section>
+
+<!-- 4 · demo -->
+<section class="slide dark" data-notes="<b>0:55–2:05 · LIVE DEMO</b> Switch to the host tab. Judges scan the QR, type a name, and they're villagers. Start a 6-round game with ~20 AI villagers, Spicy chaos. Point out: speech bubbles, the 'where everyone went' bars, the price ticker. Fire a Crow heist from the Host menu. Let it run to the results screen. Fallback if Wi-Fi dies: run party/demo.mjs for fake players.">
+  <div class="bg" style="background-image:url(screenshots/host-lobby.jpg)"></div>
+  <div class="scrim" style="background:linear-gradient(90deg,rgba(10,12,16,.96) 0,rgba(10,12,16,.9) 38%,rgba(10,12,16,.35) 60%,rgba(10,12,16,.05) 80%)"></div>
+  <div class="pad" style="display:flex;flex-direction:column;justify-content:center">
+    <div class="kicker">Live demo</div>
+    <h2 class="title" style="font-size:118px;margin-top:14px">Grab your<br>phone.</h2>
+    <div style="margin-top:40px;display:flex;flex-direction:column;gap:16px;max-width:620px">
+      <div class="panel" style="display:flex;gap:18px;align-items:center;padding:16px 22px"><span class="big" style="font-size:46px">1</span><span style="font-size:26px;font-weight:800">Scan the QR on the big screen</span></div>
+      <div class="panel" style="display:flex;gap:18px;align-items:center;padding:16px 22px"><span class="big" style="font-size:46px">2</span><span style="font-size:26px;font-weight:800">Type your name. No app, no account</span></div>
+      <div class="panel" style="display:flex;gap:18px;align-items:center;padding:16px 22px"><span class="big" style="font-size:46px">3</span><span style="font-size:26px;font-weight:800">Out-earn the room <em style="font-style:normal;color:var(--gold)">and</em> the AI villagers</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · AI villagers -->
+<section class="slide dark" data-notes="<b>2:05–2:25</b> The village is never empty: AI villagers fill it up to 60. Each one gets a strategy and a personality, and they really play the same economy you do. Scripted brain is free and instant; the OpenAI brain decides for 12 villagers per request, writes their lines, and falls back to the script if it's slow, with a hard budget cap.">
+  <div class="bg" style="background-image:url(screenshots/host-hero.jpg);filter:blur(3px) brightness(.6);transform:scale(1.04)"></div>
+  <div class="pad">
+    <div class="kicker">The AI villagers</div>
+    <h2 class="h">8 strategies × 8 personalities.<br>They play to win,<br>and they talk.</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:40px;width:900px">
+      <div class="panel">
+        <div class="kicker" style="font-size:15px;color:var(--gold)">Strategies</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">planner · contrarian · trend-chaser · landlord · specialist · basket-maker · copycat · gambler</p>
+      </div>
+      <div class="panel">
+        <div class="kicker" style="font-size:15px;color:var(--gold)">Personalities</div>
+        <p style="font-size:23px;font-weight:700;line-height:1.55;margin-top:8px">greedy · lazy · paranoid · dreamer · gossip · philosopher · dramatic · competitive</p>
+      </div>
+      <div class="panel" style="grid-column:span 2">
+        <div class="kicker" style="font-size:15px;color:var(--gold)">Two brains</div>
+        <p style="font-size:22px;font-weight:700;line-height:1.45;margin-top:8px"><span style="color:var(--mint)">Scripted</span>: free, instant, a big hand-written line bank that reacts to events and names other players.<br><span style="color:var(--mint)">OpenAI</span>: one structured call decides for 12 villagers in their own voice. Timeout → scripted fallback, per-game budget cap. A round never stalls.</p>
+      </div>
+    </div>
+    <div class="bubble" style="right:110px;top:260px;transform:rotate(2deg)"><b>Dramatic · basket-maker</b>They laughed at my baskets. They are not laughing now. They are hungry.</div>
+    <div class="bubble" style="right:210px;top:420px;transform:rotate(-2deg)"><b>Philosopher</b>Is the apple picked, or does the apple let go?</div>
+    <div class="bubble" style="right:90px;top:570px;transform:rotate(1.5deg)"><b>Paranoid</b>Gilbertrand has been counting my apples. I know it.</div>
+    <div class="bubble" style="right:250px;top:720px;transform:rotate(-1deg)"><b>Gossip</b>The orchard has the best gossip. Also apples.</div>
+  </div>
+</section>
+
+<!-- 6 · results -->
+<section class="slide dark" data-notes="<b>2:25–2:35</b> Every game ends with a podium, awards like Sheep and Lone Wolf, price charts, which AI strategy did best, and the big question: did the humans beat the machines?">
+  <div style="position:absolute;inset:0;background:#101317"></div>
+  <div class="pad" style="padding-top:64px">
+    <div class="kicker">A proper ending</div>
+    <h2 class="h" style="font-size:60px">Did the humans beat the machines?</h2>
+    <img class="shot" src="screenshots/host-results.jpg" style="width:1180px;margin-top:30px;border:1px solid var(--dline)">
+  </div>
+</section>
+
+<!-- 7 · under the hood -->
+<section class="slide dark" data-notes="<b>2:35–2:50</b> One Node process, no framework, no external services: SSE to the host, SQLite for history, three.js island, React on the phones. And we balanced it by simulation, not by feel: 200 instant games show no single job wins. Playing the market wins. We also built an economy lab that runs 1000 seeded games per candidate rule set to pick the next version.">
+  <div style="position:absolute;inset:0;background:radial-gradient(1200px 700px at 80% 10%,#1b3a47 0,#0f1b22 60%)"></div>
+  <div class="pad">
+    <div class="kicker">Under the hood</div>
+    <h2 class="h">Balanced by simulation, not by feel.</h2>
+    <div style="display:grid;grid-template-columns:1.05fr 1fr;gap:30px;margin-top:38px">
+      <div class="panel">
+        <div class="kicker" style="font-size:15px;color:var(--gold)">Always plays… · avg points over 200 simulated games</div>
+        <div class="bars">
+          <div class="bar"><span>best-paying job</span><div class="t"><div style="width:100%"></div></div><span class="v">623</span></div>
+          <div class="bar"><span>chop wood</span><div class="t"><div style="width:94.7%;background:var(--chop)"></div></div><span class="v">590</span></div>
+          <div class="bar"><span>build houses</span><div class="t"><div style="width:90.9%;background:var(--build)"></div></div><span class="v">566</span></div>
+          <div class="bar"><span>contrarian</span><div class="t"><div style="width:83%;background:#9aa3ad"></div></div><span class="v">517</span></div>
+          <div class="bar"><span>pick apples</span><div class="t"><div style="width:79%;background:var(--pick)"></div></div><span class="v">492</span></div>
+          <div class="bar"><span>random</span><div class="t"><div style="width:54.4%;background:#6f7780"></div></div><span class="v">339</span></div>
+          <div class="bar"><span>weave baskets</span><div class="t"><div style="width:50.6%;background:var(--weave)"></div></div><span class="v">315</span></div>
+        </div>
+        <p style="margin-top:18px;font-size:22px;font-weight:800;color:var(--mint)">No pure strategy wins. Reading the room wins.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div class="panel">
+          <div class="kicker" style="font-size:15px;color:var(--gold)">Stack</div>
+          <p style="font-size:22px;font-weight:700;line-height:1.5;margin-top:8px">One Node process, no framework · Server-Sent Events to the big screen · SQLite game history · three.js island · React phone controller · <span class="mono" style="font-size:19px">npm test</span> covers engine + API</p>
+        </div>
+        <div class="panel">
+          <div class="kicker" style="font-size:15px;color:var(--gold)">Economy lab · 1000 seeded games per rule set</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px" class="stat">
+            <div><div class="big" style="font-size:58px">11</div><p>candidate economies</p></div>
+            <div><div class="big" style="font-size:58px">+34%</div><p>careful play over casual</p></div>
+            <div><div class="big" style="font-size:58px">73%</div><p>half-time leader still loses</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- numbers -->
+<section class="slide dark" data-notes="<b>Optional, if a judge asks</b> Every number here is measured from the code or set in the code. The LLM cost is an estimate from token counts at the default model's price; the hard cap is real.">
+  <div style="position:absolute;inset:0;background:radial-gradient(1200px 700px at 20% 0%,#1b3a47 0,#0f1b22 60%)"></div>
+  <div class="pad">
+    <div class="kicker">Numbers worth knowing</div>
+    <h2 class="h">Small server, big room.</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:42px">
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">60</div><p style="font-size:21px">villagers in one room, humans + AI. Late joiners take over an AI villager</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--mint)">0</div><p style="font-size:21px">apps to install. Phones join in the browser by QR or a 4-letter code</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">6–30s</div><p style="font-size:21px">a round. It ends early as soon as everyone has picked</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">64</div><p style="font-size:21px">villager types: 8 strategies × 8 personalities, 116 hand-written lines</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--mint)">2.6s</div><p style="font-size:21px">to simulate 1,000 whole games (40 villagers, 12 rounds) on a laptop</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--gold)">12</div><p style="font-size:21px">AI villagers decided per OpenAI request, each in its own voice</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--coral)">$0.50</div><p style="font-size:21px">hard spend cap per game. A default game is estimated at under a cent</p></div>
+      <div class="panel stat" style="padding:24px 26px"><div class="big" style="font-size:64px;color:var(--mint)">11×1k</div><p style="font-size:21px">candidate economies × seeded games in the economy lab</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · built with Devin -->
+<section class="slide light" data-notes="<b>2:50–3:00</b> We built it today with Devin. What worked: giving the agent a way to check itself, the sim and the tests. Where it struggled: knowing what's fun, not just what's fair. (Swap in your own real experience here.)">
+  <div class="pad">
+    <div class="kicker">How we built it</div>
+    <h2 class="h">Built in one day with Devin.</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:50px">
+      <div class="card" style="border-color:#a9d6ae">
+        <span class="pill" style="background:var(--chop)">Where it helped</span>
+        <p style="font-size:23px;font-weight:700;line-height:1.4;margin-top:16px">Game loop, host overlay and phone UI, tests, the balance harness, and the docs. Devin even played full games in a headless browser to take the screenshots.</p>
+      </div>
+      <div class="card" style="border-color:#f2cf98">
+        <span class="pill" style="background:var(--weave)">What worked best</span>
+        <p style="font-size:23px;font-weight:700;line-height:1.4;margin-top:16px">Giving the agent a way to check itself. The simulator and the economy lab turned "is it balanced?" into numbers instead of vibes.</p>
+      </div>
+      <div class="card" style="border-color:#eab3a3">
+        <span class="pill" style="background:var(--pick)">Where it struggled</span>
+        <p style="font-size:23px;font-weight:700;line-height:1.4;margin-top:16px">Knowing what's <em>fun</em>, not just fair, needed a human. LLM villagers needed hard guarantees so a slow model can never freeze a room.</p>
+      </div>
+    </div>
+    <p style="margin-top:40px;font-size:21px;font-weight:700;color:var(--soft)">New today: the game, its market and rules, the AI villagers and the phone controller. The 3D island and villager names are reused from our earlier sim.</p>
+  </div>
+</section>
+
+<!-- 9 · close -->
+<section class="slide dark" data-notes="Thank you! Repo and README are on GitHub; the game runs with npm start, and phones join at /play.">
+  <div class="bg" style="background-image:url(screenshots/host-hero.jpg)"></div>
+  <div class="scrim" style="background:rgba(10,12,16,.8);backdrop-filter:blur(4px)"></div>
+  <div class="pad" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <h2 class="title" style="font-size:130px">Thank you!</h2>
+    <p class="lead" style="font-size:34px;margin-top:26px">Scan, pick a job, and beat the machines.</p>
+    <div style="margin-top:44px" class="btn">github.com/Inverseit/village-party</div>
+    <p style="margin-top:34px;font-family:var(--mono);font-size:22px;color:#cfd3d7">npm start &nbsp;→&nbsp; host on :8787 &nbsp;·&nbsp; phones on /play</p>
+  </div>
+</section>
+
+</div>
+<div id="bar"><div></div></div>
+<div id="count"></div>
+<div id="help">← → navigate · N notes · F fullscreen</div>
+<div id="notes"></div>
+<script>
+const slides=[...document.querySelectorAll('.slide')], stage=document.getElementById('stage');
+const bar=document.querySelector('#bar div'), count=document.getElementById('count'), notes=document.getElementById('notes');
+let i=Math.max(0,Math.min(slides.length-1,(parseInt(location.hash.slice(1))||1)-1));
+function fit(){const s=Math.min(innerWidth/1600,innerHeight/900);stage.style.transform=`scale(${s}) translate(-50%,-50%)`;}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+  bar.style.width=((i+1)/slides.length*100)+'%';count.textContent=(i+1)+' / '+slides.length;notes.innerHTML=slides[i].dataset.notes||'';history.replaceState(null,'','#'+(i+1));}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1);}
+  else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1);}
+  else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);
+  else if(e.key==='n'||e.key==='N')notes.classList.toggle('on');
+  else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
+});
+addEventListener('click',e=>{if(e.target.closest('#notes'))return;show(e.clientX>innerWidth/3?i+1:i-1);});
+fit();show(i);setTimeout(()=>document.getElementById('help').style.opacity=0,5000);
+</script>
+</body>
+</html>
