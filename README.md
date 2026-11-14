@@ -9,9 +9,9 @@ villagers who all have their own strategies, personalities and opinions about yo
 
 `Real-time multiplayer` · `AI agents` · `Live market economy` · `Built at Eurasian Hack London with Devin`
 
-<a href="https://inverseit.github.io/village-party/village-party-demo.mp4"><img src="docs/screenshots/film-poster.jpg" alt="Village Party demo film (86 s): click to play" width="100%"></a>
+<a href="https://inverseit.github.io/village-party/docs/village-party-demo.mp4"><img src="docs/screenshots/film-poster.jpg" alt="Village Party demo film (86 s): click to play" width="100%"></a>
 
-**[▶ Demo film (86 s)](https://inverseit.github.io/village-party/village-party-demo.mp4)** · **[Pitch deck](https://inverseit.github.io/village-party/deck/)** · [Speaker-notes deck](https://inverseit.github.io/village-party/pitch.html) (arrow keys to move, N for notes)
+**[▶ Demo film (86 s)](https://inverseit.github.io/village-party/docs/village-party-demo.mp4)** · **[Pitch deck](https://inverseit.github.io/village-party/docs/deck/)** · [Speaker-notes deck](https://inverseit.github.io/village-party/docs/pitch.html) (arrow keys to move, N for notes)
 
 </div>
 
